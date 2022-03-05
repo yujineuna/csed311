@@ -1,5 +1,7 @@
 
+
 `include "vending_machine_def.v"
+	
 
 module calculate_current_state(i_input_coin,i_select_item,item_price,coin_value,current_total,
 input_total, output_total, return_total,current_total_nxt,wait_time,o_return_coin,o_available_item,o_output_item);
@@ -16,98 +18,54 @@ input_total, output_total, return_total,current_total_nxt,wait_time,o_return_coi
 	output reg  [`kTotalBits-1:0] input_total, output_total, return_total,current_total_nxt;
 	integer i;	
 
-
+	initial begin
+	o_available_item <= 0;
+	o_output_item <= 0;
+	input_total <= 0;
+	output_total <= 0;
+	return_total <= 0;
+	current_total_nxt <= 0;
+	end
 
 	
 	// Combinational logic for the next states
-	always @(current_total or i_input_coin or i_select_item) begin
+	always @(*) begin
 		// TODO: current_total_nxt
 		// You don't have to worry about concurrent activations in each input vector (or array).
 		// Calculate the next current_total state.
-		case(current_total)
-			4'b0000://???? 
-				begin
-					if(wait_time>0)
-					input_total=coin_value[i_input_coin];//??????? -> mealy machine?? 
-					output_total=0;
-					return_total=coin_value[i_input_coin];
-					current_total_nxt=4'b0001;
-					else
-					current_total_nxt=4'b0011//time out?? 
-				end
-			4'b0001://available ? item ???? ?? ?? ?? 
-				begin
-				if(coin_value[i_select_item]=<input_total)
-					input_total=input_total-coin_value[i_select_item];
-					return_total=input_total-coin_value[i_select_item];
-					current_total_nxt=4'b0010;
-				
-				input_total=input_total+coin_value[i_input_coin];
-				return_total=return_total+coin_value[i_input_coin];
-									
-				end
-			4'b0010://available?? ??? ? ?? 
-				begin
-				ouput_total=coin_value[i_select_item];
-				current_total_nxt=4'b0001;//2????
-				end
-			4'b0011://time out? ?? ?? ??? item?????? timeout??? ?? ?????+ return button state? ????.!
-				begin	
-				input_total=0;
-				output_total=0;
-				return_total=0;
-				current_total_nxt=4'b000
-				end
-							
-
-
-		
+		if(wait_time == 0 && current_total != 0) begin //시간 종료 되었을떄 money out
+			//wait_time? 0? ?? ???? ??, current_total_nxt ? ??
+			for(i=0; i<3; i=i+1) begin
+				if(o_return_coin[i] == 1'b1) return_total = coin_value[i];
+			end
+			current_total_nxt = current_total - return_total;
+		end
+		else begin
+			//coin?? ??? current_total_nxt ???
+			for(i=0; i<3; i=i+1) begin
+				if(i_input_coin[i] == 1'b1) input_total = coin_value[i];
+			end
+			for(i=0; i<4; i=i+1) begin
+				if(i_select_item[i] == 1'b1 && o_available_item[i]) output_total = item_price[i];
+			end
+			current_total_nxt = current_total + input_total - output_total;
+		end
 	end
 
 	
 	
 	// Combinational logic for the outputs
-	always @(current_total or input_total or output_total) begin
-		//cs?? available?? swith?
-		//input 
+	always @(*) begin
 		// TODO: o_available_item
+		for(i=0; i<4; i=i+1) begin
+			if(current_total >= item_price[i]) o_available_item[i] = 1;
+			else o_available_item[i] = 0;
+		end
 		// TODO: o_output_item
-		
-	case(current_total)
-		4'b0001:
-		begin	
-		if(input_total<400)
-		o_available_item=4'b0000;
-		else if(input_total==400||(input_total>400&&input_total<500)
-		o_available_item=4'b0001;
-		else if(input_total==500||(input_total>500&&input_total<1000)
-		o_available_item=4'b0011;	
-		else if(input_total==1000||(input_total>1000&&input_total<2000)
-		o_available_item=4'b0111;	
-		else
-		o_available_item=4'b1111;	
+		for(i=0; i<4; i=i+1) begin
+			if(i_select_item[i] == 1'b1 && o_available_item[i] == 1'b1) o_output_item[i] = 1;
+			else o_output_item[i] = 0;
 		end
-		
-		4'b0010:
-		begin
-		if(output_total==400)
-		o_output_item=4'b0001;
-		else if(output_total==500)
-		o_output_item=4'b0010;
-		else if(output_total==1000)
-		o_output_item=4'b0100;
-		else 
-		o_output_item=4b'1000;
- 
-		end
-		
-	endcase
-		
-
-//input total ??
-//item_price? coin_value ???? ? ???? O_AVAILABLE_ITEM?? ??
-
-//?? i_select_item? available_item? ?? ?? o_output_item ??
 	end
  
 	
