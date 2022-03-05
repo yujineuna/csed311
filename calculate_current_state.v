@@ -33,10 +33,11 @@ input_total, output_total, return_total,current_total_nxt,wait_time,o_return_coi
 		// TODO: current_total_nxt
 		// You don't have to worry about concurrent activations in each input vector (or array).
 		// Calculate the next current_total state.
-		if(wait_time == 0 && current_total != 0) begin //시간 종료 되었을떄 money out
+		if(wait_time == 0 && current_total != 0) begin //?? ?? ???? money out
 			//wait_time? 0? ?? ???? ??, current_total_nxt ? ??
 			for(i=0; i<3; i=i+1) begin
 				if(o_return_coin[i] == 1'b1) return_total = coin_value[i];
+				else return_total=0;
 			end
 			current_total_nxt = current_total - return_total;
 		end
@@ -49,6 +50,7 @@ input_total, output_total, return_total,current_total_nxt,wait_time,o_return_coi
 				if(i_select_item[i] == 1'b1 && o_available_item[i]) output_total = item_price[i];
 			end
 			current_total_nxt = current_total + input_total - output_total;
+			input_total=0;output_total=0;
 		end
 	end
 
