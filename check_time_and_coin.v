@@ -41,16 +41,16 @@ module check_time_and_coin(i_input_coin,i_select_item,clk,reset_n,wait_time,o_re
 		endcase
 
 		case(i_select_item)
-			4'b0001: if(total_cash>400||total_cash==400) begin
+			4'b0001: if(total_cash>=400) begin
 				total_cash=total_cash-400;
 			end
-			4'b0010:if(total_cash>500||total_cash==500) begin
+			4'b0010:if(total_cash>=500) begin
 				total_cash=total_cash-500;
 			end
-			4'b0100:if(total_cash>1000||total_cash==1000) begin
+			4'b0100:if(total_cash>=1000) begin
 				total_cash=total_cash-1000;
 			end
-			4'b1000:if(total_cash>2000||total_cash==2000) begin
+			4'b1000:if(total_cash>=2000) begin
 				total_cash=total_cash-2000;
 			end
 			default: begin end
@@ -62,7 +62,9 @@ module check_time_and_coin(i_input_coin,i_select_item,clk,reset_n,wait_time,o_re
 		
 		if(x!=0) o_return_coin = 3'b100;
 		else if(y!=0) o_return_coin = 3'b010;
-		else o_return_coin = 3'b001;
+		else if(z!=0) o_return_coin = 3'b001;
+		else o_return_coin=3'b000;
+
 	end
 
 	always @(posedge clk ) begin
