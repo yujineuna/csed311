@@ -2,82 +2,79 @@
 
 	
 
-module check_time_and_coin(return_total,i_input_coin,i_select_item,clk,reset_n,wait_time,o_return_coin);
+module check_time_and_coin(i_input_coin,i_select_item,clk,reset_n,wait_time,o_return_coin);
 	input clk;
 	input reset_n;
-	input return_total;
 	input [`kNumCoins-1:0] i_input_coin;
 	input [`kNumItems-1:0]	i_select_item;
 	output reg  [`kNumCoins-1:0] o_return_coin;
 	output reg [31:0] wait_time;
-	
-	integer x;
-	integer y;
-	integer z;
+
+	reg total_cash;
+	integer x, y, z;
+
 	// initiate values
 	initial begin
 		// TODO: initiate values
-	wait_time<=100;
-	reset_n<=1;
-	i_input_coin<=0;
-	o_return_coin<=0;
-	
+		o_return_coin <= 3'b000;
+		wait_time <= 0;
+		total_cash <= 0;
+		x <= 0;
+		y <= 0;
+		z <= 0;
 	end
 
 
 	// update coin return time
 	always @(i_input_coin, i_select_item) begin
-	wait_time<=100;
 		// TODO: update coin return time
+		wait_time <= 100;
 	end
 
-	always @(return_total) begin //600=500+100 700=500+200 1300=1000+300
-		x=return_total/1000;
-		y=(return_total%1000)/500;
-		z=((return_total%1000)%500)/100
-		
-		if(x==0&&Y==0&&z==0)
-			o_return_coin=4b'000;
-		else if(x==0&&Y==0&&z!=0)
-			o_return_coin=4b'001;
-		else if(x==0&&Y!=0&&z==0)
-			o_return_coin=4b'010;
-		else if(x==0&&Y!=0&&z!=0)
-			o_return_coin=4b'011;
-		else if(x!=0&&Y==0&&z==0)
-			o_return_coin=4b'100;
-		else if(x!=0&&Y==0&&z!=0)
-			o_return_coin=4b'101;
-		else if(x!=0&&Y!=0&&z==0)
-			o_return_coin=4b'110;
-		else if(x!=0&&Y!=0&&z!=0)
-			o_return_coin=4b'111;
-	
+	always @(*) begin
 		// TODO: o_return_coin
+		case(i_input_coin)
+			3'b001: total_cash = total_cash + 100;
+			3'b010: total_cash = total_cash + 500;
+			3'b100: total_cash = total_cash + 1000;
+			default: begin end
+		endcase
+
+		case(i_select_item)
+			4'b0001: if(total_cash>400||total_cash==400) begin
+				total_cash=total_cash-400;
+			end
+			4'b0010:if(total_cash>500||total_cash==500) begin
+				total_cash=total_cash-500;
+			end
+			4'b0100:if(total_cash>1000||total_cash==1000) begin
+				total_cash=total_cash-1000;
+			end
+			4'b1000:if(total_cash>2000||total_cash==2000) begin
+				total_cash=total_cash-2000;
+			end
+			default: begin end
+		endcase
+		//? coin type? ??
+		x=total_cash/1000;
+		y=(total_cash%1000)/500;
+		z=((total_cash%1000)%500)/100;
+		
+		if(x!=0) o_return_coin = 3'b100;
+		else if(y!=0) o_return_coin = 3'b010;
+		else o_return_coin = 3'b001;
 	end
 
 	always @(posedge clk ) begin
 		if (!reset_n) begin
 		// TODO: reset all states.
-//RETURN CHANGE
-//I_INPUT_COIN
-//I_SELECT_ITEM
-//WAIT TIME
-//RESET_N
-		i_input_coin<=4b'0000;
-		i_select_item<=4b'0000;
-		wait_time<=100;
-		resent_n<=1;
-		
-		
-		
+		o_return_coin <= 3'b000;
+		wait_time <= 0;	
+		total_cash <= 0;
 		end
 		else begin
 		// TODO: update all states.
-		i_input_coin<=4b'0000;
-		i_select_item<=4b'0000;
-		wait_time=wait_time-1;
-
+		if(wait_time > 0) wait_time = wait_time - 1;
 		end
 	end
 endmodule 
