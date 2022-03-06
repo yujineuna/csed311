@@ -2,9 +2,10 @@
 
 	
 
-module check_time_and_coin(i_input_coin,i_select_item,clk,reset_n,wait_time,o_return_coin);
+module check_time_and_coin(i_input_coin,i_select_item,clk,i_trigger_return,reset_n,wait_time,o_return_coin);
 	input clk;
 	input reset_n;
+	input i_trigger_return;
 	input [`kNumCoins-1:0] i_input_coin;
 	input [`kNumItems-1:0]	i_select_item;
 	output reg  [`kNumCoins-1:0] o_return_coin;
@@ -16,7 +17,6 @@ module check_time_and_coin(i_input_coin,i_select_item,clk,reset_n,wait_time,o_re
 	// initiate values
 	initial begin
 		// TODO: initiate values
-		o_return_coin <= 3'b000;
 		wait_time <= 0;
 		total_cash <= 0;
 		x <= 0;
@@ -28,7 +28,28 @@ module check_time_and_coin(i_input_coin,i_select_item,clk,reset_n,wait_time,o_re
 	// update coin return time
 	always @(i_input_coin, i_select_item) begin
 		// TODO: update coin return time
-		wait_time <= 100;
+		//if i_input_coin is set
+		if(i_input_coin) wait_time = 100;
+		
+		//if the item is dispensed, than reset wait_time
+		case(i_select_item)
+				4'b0001: if(total_cash>=400) begin
+					wait_time=100;
+				end
+				else begin end
+				4'b0010:if(total_cash>=500) begin
+					wait_time=100;
+				end
+				else begin end
+				4'b0100:if(total_cash>=1000) begin
+					wait_time=100;
+				end
+				else begin end
+				4'b1000:if(total_cash>=2000) begin
+					wait_time=100;
+				end
+				else begin end
+			endcase
 	end
 
 	always @(*) begin
@@ -39,20 +60,44 @@ module check_time_and_coin(i_input_coin,i_select_item,clk,reset_n,wait_time,o_re
 			3'b100: total_cash = total_cash + 1000;
 			default: begin end
 		endcase
-		//? coin type? ??
-		x=total_cash/1000;
-		y=(total_cash%1000)/500;
-		z=((total_cash%1000)%500)/100;
+
+		case(i_select_item)
+			4'b0001: if(total_cash>=400) begin
+				total_cash=total_cash-400;
+			end
+			4'b0010:if(total_cash>=500) begin
+				total_cash=total_cash-500;
+			end
+			4'b0100:if(total_cash>=1000) begin
+				total_cash=total_cash-1000;
+			end
+			4'b1000:if(total_cash>=2000) begin
+				total_cash=total_cash-2000;
+			end
+			default: begin end
+		endcase
+
+		//calculate the number of each type of coin
+		x=total_cash/1000; //1000 coin 
+		y=(total_cash%1000)/500; // 500 coin
+		z=((total_cash%1000)%500)/100; // 100 coin
 		
-		if(x!=0) o_return_coin = 3'b100;
-		else if(y!=0) o_return_coin = 3'b010;
-		else o_return_coin = 3'b001;
+		if(x!=0) o_return_coin = 3'b100; 
+		else if(y!=0) o_return_coin = 3'b010; 
+		else o_return_coin = 3'b001;	
+		 
+		if(wait_time==0 || i_trigger_return)begin
+			if(o_return_coin==3'b100) begin total_cash=total_cash-1000; end
+			else if(o_return_coin==3'b010) begin total_cash=total_cash-500; end
+			else begin total_cash=total_cash-100; end
+		end
+
+		
 	end
 
 	always @(posedge clk ) begin
 		if (!reset_n) begin
 		// TODO: reset all states.
-		o_return_coin <= 3'b000;
 		wait_time <= 0;	
 		total_cash <= 0;
 		end
