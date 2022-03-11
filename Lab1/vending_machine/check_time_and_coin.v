@@ -2,37 +2,40 @@
 
 	
 
-module check_time_and_coin(i_input_coin,i_select_item,clk,i_trigger_return,reset_n,wait_time,o_return_coin);
+module check_time_and_coin(i_input_coin,i_select_item,clk,current_total,o_output_item,i_trigger_return,reset_n,wait_time,o_return_coin);
 	input clk;
 	input reset_n;
 	input i_trigger_return;
+	input [`kNumItems-1:0] o_output_item;
+	input [`kTotalBits-1:0] current_total;
 	input [`kNumCoins-1:0] i_input_coin;
 	input [`kNumItems-1:0]	i_select_item;
 	output reg  [`kNumCoins-1:0] o_return_coin;
 	output reg [31:0] wait_time;
 
-	reg total_cash;
+	//reg total_cash;
 	integer x, y, z;
 
 	// initiate values
 	initial begin
 		// TODO: initiate values
 		wait_time <= 0;
-		total_cash <= 0;
+		//total_cash <= 0;
 		x <= 0;
 		y <= 0;
 		z <= 0;
 	end
-
+                                                                                                                                                                                                                                                                                                                                                                                                                          
 
 	// update coin return time
-	always @(i_input_coin, i_select_item) begin
+	always @(i_input_coin, o_output_item) begin
 		// TODO: update coin return time
 		//if i_input_coin is set
 		if(i_input_coin) wait_time = 100;
+		if(o_output_item) wait_time = 100;
 		
 		//if the item is dispensed, than reset wait_time
-		case(i_select_item)
+		/*case(i_select_item)
 				4'b0001: if(total_cash>=400) begin
 					wait_time=100;
 				end
@@ -49,12 +52,12 @@ module check_time_and_coin(i_input_coin,i_select_item,clk,i_trigger_return,reset
 					wait_time=100;
 				end
 				else begin end
-			endcase
+			endcase*/
 	end
 
 	always @(*) begin
 		// TODO: o_return_coin
-		case(i_input_coin)
+		/*case(i_input_coin)
 			3'b001: total_cash = total_cash + 100;
 			3'b010: total_cash = total_cash + 500;
 			3'b100: total_cash = total_cash + 1000;
@@ -75,22 +78,25 @@ module check_time_and_coin(i_input_coin,i_select_item,clk,i_trigger_return,reset
 				total_cash=total_cash-2000;
 			end
 			default: begin end
-		endcase
+		endcase*/
 
 		//calculate the number of each type of coin
-		x=total_cash/1000; //1000 coin 
-		y=(total_cash%1000)/500; // 500 coin
-		z=((total_cash%1000)%500)/100; // 100 coin
+		x<=current_total/1000; //1000 coin 
+		y<=(current_total%1000)/500; // 500 coin
+		z<=((current_total%1000)%500)/100; // 100 coin
 		
-		if(x!=0) o_return_coin = 3'b100; 
-		else if(y!=0) o_return_coin = 3'b010; 
-		else o_return_coin = 3'b001;	
-		 
-		if(wait_time==0 || i_trigger_return)begin
+		if(wait_time == 0 || i_trigger_return) begin
+		if(x>0) o_return_coin <= 3'b100; 
+		else if(y>0) o_return_coin <= 3'b010; 
+		else if(z>0) o_return_coin <= 3'b001;
+		else o_return_coin <= 3'b000;
+		end
+
+		/*if(wait_time==0 || i_trigger_return)begin
 			if(o_return_coin==3'b100) begin total_cash=total_cash-1000; end
 			else if(o_return_coin==3'b010) begin total_cash=total_cash-500; end
 			else begin total_cash=total_cash-100; end
-		end
+		end*/
 
 		
 	end
@@ -99,7 +105,7 @@ module check_time_and_coin(i_input_coin,i_select_item,clk,i_trigger_return,reset
 		if (!reset_n) begin
 		// TODO: reset all states.
 		wait_time <= 0;	
-		total_cash <= 0;
+		//total_cash <= 0;
 		end
 		else begin
 		// TODO: update all states.
