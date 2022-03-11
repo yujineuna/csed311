@@ -62,14 +62,14 @@ input_total, output_total, return_total,current_total_nxt,wait_time,o_return_coi
 		return_total=0;
 		// TODO: o_available_item
 		for(i=0; i<4; i=i+1) begin
-			if(current_total >= item_price[i]) o_available_item[i] = 1;
-			else o_available_item[i]=0;
+			if(current_total >= item_price[i]) o_available_item[i] <= 1;
+			else o_available_item[i]<=0;
 			
 		end
 		// TODO: o_output_item
 		for(i=0; i<4; i=i+1) begin
-			if(i_select_item[i] == 1'b1 && o_available_item[i] == 1'b1) o_output_item[i] = 1;
-			else o_output_item[i] = 0;
+			if(i_select_item[i] == 1'b1 && o_available_item[i] == 1'b1) o_output_item[i] <= 1;
+			else o_output_item[i] <= 0;
 		end
 	end
  

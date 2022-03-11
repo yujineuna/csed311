@@ -13,14 +13,13 @@ module check_time_and_coin(i_input_coin,i_select_item,clk,current_total,o_output
 	output reg  [`kNumCoins-1:0] o_return_coin;
 	output reg [31:0] wait_time;
 
-	//reg total_cash;
 	integer x, y, z;
 
 	// initiate values
 	initial begin
 		// TODO: initiate values
 		wait_time <= 0;
-		//total_cash <= 0;
+		o_return_coin <= 0;
 		x <= 0;
 		y <= 0;
 		z <= 0;
@@ -32,53 +31,13 @@ module check_time_and_coin(i_input_coin,i_select_item,clk,current_total,o_output
 		// TODO: update coin return time
 		//if i_input_coin is set
 		if(i_input_coin) wait_time = 100;
+		//if the item is dispensed
 		if(o_output_item) wait_time = 100;
 		
-		//if the item is dispensed, than reset wait_time
-		/*case(i_select_item)
-				4'b0001: if(total_cash>=400) begin
-					wait_time=100;
-				end
-				else begin end
-				4'b0010:if(total_cash>=500) begin
-					wait_time=100;
-				end
-				else begin end
-				4'b0100:if(total_cash>=1000) begin
-					wait_time=100;
-				end
-				else begin end
-				4'b1000:if(total_cash>=2000) begin
-					wait_time=100;
-				end
-				else begin end
-			endcase*/
 	end
 
 	always @(*) begin
 		// TODO: o_return_coin
-		/*case(i_input_coin)
-			3'b001: total_cash = total_cash + 100;
-			3'b010: total_cash = total_cash + 500;
-			3'b100: total_cash = total_cash + 1000;
-			default: begin end
-		endcase
-
-		case(i_select_item)
-			4'b0001: if(total_cash>=400) begin
-				total_cash=total_cash-400;
-			end
-			4'b0010:if(total_cash>=500) begin
-				total_cash=total_cash-500;
-			end
-			4'b0100:if(total_cash>=1000) begin
-				total_cash=total_cash-1000;
-			end
-			4'b1000:if(total_cash>=2000) begin
-				total_cash=total_cash-2000;
-			end
-			default: begin end
-		endcase*/
 
 		//calculate the number of each type of coin
 		x<=current_total/1000; //1000 coin 
@@ -92,24 +51,17 @@ module check_time_and_coin(i_input_coin,i_select_item,clk,current_total,o_output
 		else o_return_coin <= 3'b000;
 		end
 
-		/*if(wait_time==0 || i_trigger_return)begin
-			if(o_return_coin==3'b100) begin total_cash=total_cash-1000; end
-			else if(o_return_coin==3'b010) begin total_cash=total_cash-500; end
-			else begin total_cash=total_cash-100; end
-		end*/
-
-		
 	end
 
 	always @(posedge clk ) begin
 		if (!reset_n) begin
 		// TODO: reset all states.
-		wait_time <= 0;	
-		//total_cash <= 0;
+		wait_time <= 0;
+		o_return_coin <= 0;
 		end
 		else begin
 		// TODO: update all states.
-		if(wait_time > 0) wait_time = wait_time - 1;
+		if(wait_time > 0) wait_time <= wait_time - 1;
 		end
 	end
 endmodule 
