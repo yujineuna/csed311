@@ -30,9 +30,9 @@ module check_time_and_coin(i_input_coin,i_select_item,clk,current_total,o_output
 	always @(i_input_coin, o_output_item) begin
 		// TODO: update coin return time
 		//if i_input_coin is set
-		if(i_input_coin) wait_time = 100;
+		if(i_input_coin) wait_time <= 100;
 		//if the item is dispensed
-		if(o_output_item) wait_time = 100;
+		if(o_output_item) wait_time <= 100;
 		
 	end
 
