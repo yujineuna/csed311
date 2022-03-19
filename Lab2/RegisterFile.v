@@ -9,21 +9,24 @@ module RegisterFile(input	reset,
                     output [31:0] rs2_dout);  // output of rs 2
   integer i;
   // Register file
-  reg [31:0] rf[0:31];
+reg [31:0] rf[0:31];
 
-assign rs1_dout = rf[rs1];
-assign rs2_dout = rf[rs2];
+assign rs1_dout=rf[rs1];
+assign rs2_dout=rf[rs2];
 
-always @(posedge clk) begin
-	if(write_enable&&(rd!=32b'0))
-	begin
-	 rf[rd] <= rd_din;
-	end
+
+always@(posedge clk) begin  
+  if(write_enable&&(rd!=32b'0))
+  begin
+    rf[rd]<=rd_din;
+  end
 end
 
+
+  
   // TODO
-  // Asynchronously read register file
-  // Synchronously write data to the register file
+  // Asynchronously = blocking  read register file
+  // Synchronously <= non_blocking write data to the register file
 
   // Initialize register file (do not touch)
   always @(posedge clk) begin
