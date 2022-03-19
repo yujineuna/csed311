@@ -5,6 +5,7 @@ module ImmediateGenerator(
   );
 
 reg opcode;
+
   //according to instruction type
 
   always @(opcode) begin

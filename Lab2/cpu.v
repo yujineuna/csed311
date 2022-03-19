@@ -122,7 +122,7 @@ adder pcplusImm(
 
 
   mux DatatoWrite(
-  .mux_in1(mem_dout),//mem[add]
+  .mux_in1(writeData),//mem[add]
   .mux_in2(tempPc1),//pc+4
   .control(pc_to_reg),
   .mux_out(writeData)
@@ -150,7 +150,7 @@ adder pcplusImm(
 );
 
   mux rs2orI(
-  .mux_in1(rs1_dout),
+  .mux_in1(rs2_dout),
   .mux_in2(imm_gen_out),
   .control(alu_src),
   .mux_out(alu_in_2)
