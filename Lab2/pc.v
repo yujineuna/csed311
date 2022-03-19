@@ -1,8 +1,8 @@
-module pc(
+module PC(
     input reset,       // input (Use reset to initialize PC. Initial value must be 0)
     input clk,         // input
     input [31:0] next_pc,     // input
-    output [31:0] current_pc   // output
+    output reg [31:0] current_pc   // output
   );
 
 initial begin
@@ -10,8 +10,8 @@ initial begin
 end
 
 always @(*)begin
-    if(reset_n)begin
-        current_pc<=0
+    if(reset)begin
+        current_pc<=0;
     end
 end
 
