@@ -60,7 +60,7 @@ always@(part_of_inst)begin
 		`BRANCH: branch = 1;
 		`JAL: begin is_jal = 1;
 		     pc_to_reg = 1; end
-		`ECALL: begin end
+		`ECALL:
 	endcase
 end
 endmodule

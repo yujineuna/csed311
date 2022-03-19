@@ -12,7 +12,9 @@ module CPU(input reset,       // positive reset signal
            input clk,         // clock signal
            output is_halted); // Whehther to finish simulation
   /***** Wire declarations *****/
-
+  
+input reset;
+input clk;
 wire [31:0] next_pc;
 wire [31:0] current_pc;
 wire [31:0] tempPc1;//pc+4
