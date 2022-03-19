@@ -1,45 +1,45 @@
 `include "AluOps.v"
 
-module ALU(op,data1,data2,result,bcond);
+module ALU(alu_op,alu_in_1,alu_in_2,alu_result,alu_bcond);
 
-	input [3:0]op;
-	input [31:0] data1;
-	input [31:0] data2;
-	output reg [31:0] result;
-	output reg bcond;
+	input [3:0]alu_op;
+	input [31:0] alu_in_1;
+	input [31:0] alu_in_2;
+	output reg [31:0] alu_result;
+	output reg alu_bcond;
 
 //initialization
-result = 0;
-bcond = 0;
+alu_result = 0;
+alu_bcond = 0;
 
 	//calculate depend on op
-	always @(op) begin
-		result = 0;
-		bcond = 0;
-		case(op)
+	always @(alu_op) begin
+		alu_result = 0;
+		alu_bcond = 0;
+		case(alu_op)
 			BEQ: begin
-			 if(data1-data2==0) bcond =1;
-			 else bcond = 0;
+			 if(alu_in_1 - alu_in_2==0) alu_bcond =1;
+			 else alu_bcond = 0;
 			end
 			BNE: begin
-			 if(data1-data2!=0) bcond =1;
-			 else bcond = 0;
+			 if(alu_in_1-alu_in_2!=0) alu_bcond =1;
+			 else alu_bcond = 0;
 			end
 			BLT: begin
-			 if(data1<data2) bcond =1;
-			 else bcond = 0;
+			 if(alu_in_1<alu_in_2) alu_bcond =1;
+			 else alu_bcond = 0;
 			end
 			BGE: begin
-			 if(data1>data2) bcond =1;
-			 else bcond = 0;
+			 if(alu_in_1>alu_in_2) alu_bcond =1;
+			 else alu_bcond = 0;
 			end
-			ADD: result = data1+data2;
-			SUB: result = data1-data2;
-			SLL: result = data1>>data2;
-			XOR: result = data1^data2;
-			OR: result = data1|data2;
-			AND: result = data1&data2;
-			SRL: result = data1<<data2;
+			ADD: alu_result = alu_in_1+alu_in_2;
+			SUB: alu_result = alu_in_1-alu_in_2;
+			SLL: alu_result = alu_in_1<<alu_in_2;
+			XOR: alu_result = alu_in_1^alu_in_2;
+			OR: alu_result = alu_in_1|alu_in_2;
+			AND: alu_result = alu_in_1&alu_in_2;
+			SRL: alu_result = alu_in_1>>alu_in_2;
 		endcase
 	end
 

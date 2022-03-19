@@ -1,7 +1,7 @@
 `include "opcodes.v"
 
 module ControlUnit(
-	input [5:0] opcode,
+	input [6:0] part_of_inst,
 	output reg is_jal, 
 	output reg is_jalr,
 	output reg branch,
@@ -25,7 +25,7 @@ write_enable = 0; //RegWrite
 pc_to_reg = 0; //PCtoReg
 is_ecall = 0; //end sign
 
-always@(opcode)begin
+always@(part_of_inst)begin
 	is_jal = 0;
 	is_jalr = 0;
 	branch = 0;

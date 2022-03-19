@@ -157,7 +157,7 @@ adder pcplusImm(
 
   // ---------- ALU Control Unit ----------
   ALUControlUnit alu_ctrl_unit (
-    .part_of_inst(dout),  // input
+    .part_of_inst(dout[31:0]),  // input
     .alu_op(alu_op)         // output
   );
 
