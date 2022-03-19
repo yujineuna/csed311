@@ -1,4 +1,4 @@
-module RegisterFile(input	reset,
+module RegisterFile(input reset,
                     input clk,
                     input [4:0] rs1,          // source register 1
                     input [4:0] rs2,          // source register 2
@@ -10,6 +10,10 @@ module RegisterFile(input	reset,
   integer i;
   // Register file
 reg [31:0] rf[0:31];
+
+//initial begin
+// rf_data = rf;
+//end
 
 assign rs1_dout=rf[rs1];
 assign rs2_dout=rf[rs2];

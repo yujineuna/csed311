@@ -10,8 +10,8 @@ module ALU(alu_op,alu_in_1,alu_in_2,alu_result,alu_bcond);
 
 //initialization
 initial begin
-  alu_result = 0;
-  alu_bcond = 0;
+  alu_result <= 0;
+  alu_bcond <= 0;
 end
 
 	//calculate depend on op

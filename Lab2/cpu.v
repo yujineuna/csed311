@@ -1,16 +1,6 @@
 // Submit this file with other files you created.
 // Do not touch port declarations of the module 'CPU'.
 
-`include "ALU.v"
-`include "ALUControlUnit.v"
-`include "ControlUnit.v"
-`include "immediategenerator.v"
-`include "Memory.v"
-`include "mux.v"
-`include "pc.v"
-`include "RegisterFile.v"
-`include "adder.v"
-
 // Guidelines
 // 1. It is highly recommened to `define opcodes and something useful.
 // 2. You can modify the module.
@@ -32,6 +22,8 @@ wire [31:0] tempPc2;//pc+immediatevalue
 
 wire [31:0] addr;
 wire [31:0] dout;//for instruction
+
+//reg [31:0] rf_data[0:31];
 
 wire [31:0] rs1_dout;
 wire [31:0] rs2_dout;
@@ -55,7 +47,7 @@ wire [31:0]alu_reuslt;
 
 wire write_enable;
 wire is_jal;
-wire is_jalr;
+wire is_jalr; // same as pc_src_2
 wire branch;
 wire mem_read;
 wire mem_to_reg;
@@ -63,15 +55,18 @@ wire mem_write;
 wire alu_src;
 wire pc_to_reg;
 wire is_ecall;
-wire pc_src_1;
-wire pc_src_2; //for control
-
+reg pc_src_1;
 
 
 
   /***** Register declarations *****/
+initial begin
+  pc_src_1<=0;
+end
 
-
+always @(is_jal, branch,alu_bcond) begin
+  pc_src_1 <= (branch&alu_bcond) | is_jal;
+end
 
 
   // ---------- Update program counter ----------
@@ -83,22 +78,23 @@ wire pc_src_2; //for control
     .current_pc(current_pc)   // output
   );
   
-adder pcplus4(.add1(current_pc),
-.add2(4),
-.addout(tempPc1)
-);
+  adder pcplus4(
+    .add1(current_pc), //input
+    .add2(4), //input
+    .addout(tempPc1) //output
+  );
 
 adder pcplusImm(
-.add1(current_pc),
-.add2(imm_gen_out),
-.addout(tempPc2)
+.add1(current_pc), //input
+.add2(imm_gen_out), //input
+.addout(tempPc2) //output
 );
 
   // ---------- Instruction Memory ----------
   InstMemory imem(
     .reset(reset),   // input
     .clk(clk),     // input
-    .addr(addr),    // input
+    .addr(current_pc),    // input
     .dout(dout)     // output
   );
 
@@ -112,7 +108,8 @@ adder pcplusImm(
     .rd_din (writeData),       // input
     .write_enable (write_enable),    // input
     .rs1_dout (rs1_dout),     // output
-    .rs2_dout (rs2_dout)      // output
+    .rs2_dout (rs2_dout)
+    //.rf_data(rf_data)      // output
   );
 
 
@@ -147,8 +144,8 @@ adder pcplusImm(
 );
 
   mux fromPCSrc1(
-  .mux_in1(temp_pc1),//pc+4
-  .mux_in2(temp_pc2),
+  .mux_in1(tempPc1),//pc+4
+  .mux_in2(tempPc2),
   .control(pc_src_1),
   .mux_out(next_pc)
 );
@@ -156,7 +153,7 @@ adder pcplusImm(
   mux fromPCSrc2(
   .mux_in1(next_pc),//pc+4||pc+immediate value
   .mux_in2(alu_result),
-  .control(pc_src_2),
+  .control(is_jalr),
   .mux_out(next_pc)
 );
 
