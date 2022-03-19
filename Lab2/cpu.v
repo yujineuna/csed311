@@ -1,6 +1,16 @@
 // Submit this file with other files you created.
 // Do not touch port declarations of the module 'CPU'.
 
+`include "ALU.v"
+`include "ALUControlUnit.v"
+`include "ControlUnit.v"
+`include "immediategenerator.v"
+`include "Memory.v"
+`include "mux.v"
+`include "pc.v"
+`include "RegisterFile.v"
+`include "adder.v"
+
 // Guidelines
 // 1. It is highly recommened to `define opcodes and something useful.
 // 2. You can modify the module.
@@ -15,6 +25,7 @@ module CPU(input reset,       // positive reset signal
 
 wire [31:0] next_pc;
 wire [31:0] current_pc;
+
 wire [31:0] tempPc1;//pc+4
 wire [31:0] tempPc2;//pc+immediatevalue
 //for pc
@@ -65,7 +76,7 @@ wire pc_src_2; //for control
 
   // ---------- Update program counter ----------
   // PC must be updated on the rising edge (positive edge) of the clock.
-  PC pc(
+  PC pcupdator(
     .reset(reset),       // input (Use reset to initialize PC. Initial value must be 0)
     .clk(clk),         // input
     .next_pc(next_pc),     // input
@@ -159,7 +170,7 @@ adder pcplusImm(
 
   // ---------- Immediate Generator ----------
   ImmediateGenerator imm_gen(
-    .part_of_inst(dout[31:0]),  // input
+    .inst(dout[31:0]),  // input
     .imm_gen_out(imm_gen_out)    // output
   );
 

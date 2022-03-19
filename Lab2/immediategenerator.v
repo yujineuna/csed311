@@ -20,11 +20,11 @@ reg opcode;
  end
  else if(opcode==`BRANCH)
  begin
- imm_gen_out=$signed({inst[31],inst[7],inst[30:25],inst[11:8],0});
+ imm_gen_out=$signed({inst[31],inst[7],inst[30:25],inst[11:8],1'b0});
  end
  else if(opcode==`JAL||opcode==`JALR)
  begin
- imm_gen_out=$signed({inst[31],inst[19:12],inst[20],inst[30:25],inst[24:21],0});
+ imm_gen_out=$signed({inst[31],inst[19:12],inst[20],inst[30:25],inst[24:21],1'b0});
  end
 
   end
