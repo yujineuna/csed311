@@ -7,17 +7,17 @@ module PC(
 
 
 initial begin
-    current_pc<=0;
+    current_pc<=32'b0;
 end
 
-always @(*)begin
+
+always @(posedge clk)begin
     if(reset)begin
         current_pc<=0;
     end
-end
-
-always @(posedge clk)begin
-    current_pc<=next_pc;
+    else begin
+        current_pc<=next_pc;
+    end
 end
 
 

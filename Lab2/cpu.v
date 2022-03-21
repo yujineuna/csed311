@@ -7,10 +7,11 @@
 // (e.g., port declarations, remove modules, define new modules, ...)
 // 3. You might need to describe combinational logics to drive them into the module (e.g., mux, and, or, ...)
 // 4. `include files if required
+`define EOF 32'hFFFFFFFF
 
 module CPU(input reset,       // positive reset signal
            input clk,         // clock signal
-           output is_halted); // Whehther to finish simulation
+           output reg is_halted); // Whehther to finish simulation
   /***** Wire declarations *****/
 
 wire [31:0] next_pc;
@@ -18,32 +19,34 @@ wire [31:0] current_pc;
 
 wire [31:0] tempPc1;//pc+4
 wire [31:0] tempPc2;//pc+immediatevalue
+wire [31:0] tempPc;//for mux fromPCSrc1
 //for pc
 
 wire [31:0] addr;
-wire [31:0] dout;//for instruction
+reg [31:0] dout;//for instruction
 
 //reg [31:0] rf_data[0:31];
 
 wire [31:0] rs1_dout;
-wire [31:0] rs2_dout;
+reg [31:0] rs2_dout;
 wire[31:0] rd_din;
 wire [31:0] writeData;//alu result or memory value or pc+4
+wire [31:0] memOrALU; //for the mux memReadData's output
 //for register
 wire[31:0] mem_dout;
 //for datamemory
-wire [31:0] imm_gen_out;
+reg [31:0] imm_gen_out;
 //for immediate value generation
 
 
 wire[31:0] alu_in_2;//alu source & mux output
 wire [6:0] alu_op;//output of alu control unit
 wire alu_bcond;//for bcond
-wire [31:0]alu_reuslt;
+reg [31:0]alu_reuslt;
 //for alu
   
-
-
+//constant for pcplus4
+reg [31:0] four;
 
 wire write_enable;
 wire is_jal;
@@ -62,12 +65,17 @@ reg pc_src_1;
   /***** Register declarations *****/
 initial begin
   pc_src_1<=0;
+  is_halted <=0;
+  four <= 32'd4;
 end
 
 always @(is_jal, branch,alu_bcond) begin
   pc_src_1 <= (branch&alu_bcond) | is_jal;
 end
 
+always @(posedge clk) begin
+  if(dout == `EOF) is_halted <= 1;
+end
 
   // ---------- Update program counter ----------
   // PC must be updated on the rising edge (positive edge) of the clock.
@@ -80,7 +88,7 @@ end
   
   adder pcplus4(
     .add1(current_pc), //input
-    .add2(4), //input
+    .add2(four), //input
     .addout(tempPc1) //output
   );
 
@@ -130,7 +138,7 @@ adder pcplusImm(
 
 
   mux DatatoWrite(
-  .mux_in1(writeData),//mem[add]
+  .mux_in1(memOrALU),//mem[add]
   .mux_in2(tempPc1),//pc+4
   .control(pc_to_reg),
   .mux_out(writeData)
@@ -140,18 +148,18 @@ adder pcplusImm(
   .mux_in1(alu_result),
   .mux_in2(mem_dout),//mem[add]
   .control(mem_to_reg),
-  .mux_out(writeData)
+  .mux_out(memOrALU)
 );
 
   mux fromPCSrc1(
   .mux_in1(tempPc1),//pc+4
   .mux_in2(tempPc2),
   .control(pc_src_1),
-  .mux_out(next_pc)
+  .mux_out(tempPc)
 );
 
   mux fromPCSrc2(
-  .mux_in1(next_pc),//pc+4||pc+immediate value
+  .mux_in1(tempPc),//pc+4||pc+immediate value
   .mux_in2(alu_result),
   .control(is_jalr),
   .mux_out(next_pc)

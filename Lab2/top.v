@@ -39,7 +39,7 @@ module top;
       $display("TOTAL CYCLE %d\n", total_cycle);
       // Print register values
       for (i = 0; i < 32; i = i + 1)
-        $display("%d %x\n", i, cpu.reg_file.rf_data[i]);
+        $display("%d %x\n", i, cpu.reg_file.rf[i]);
       $finish();
     end
   end

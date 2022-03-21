@@ -21,7 +21,7 @@ module InstMemory #(parameter MEM_DEPTH = 1024) (input reset,
       for (i = 0; i < MEM_DEPTH; i = i + 1)
           mem[i] = 32'b0;
       // Provide path of the file including instructions with binary format
-      $readmemh("test.txt", mem);
+      $readmemh("basic_mem.txt", mem);
     end
   end
 
@@ -32,8 +32,8 @@ module DataMemory #(parameter MEM_DEPTH = 16384) (input reset,
                                                   input [31:0] addr,    // address of the data memory
                                                   input [31:0] din,     // data to be written
                                                   input mem_read,       // is read signal driven?
-                                                  input mem_write,      // is write signal driven?
-                                                  output reg [31:0] dout);  // output of the data memory at addr
+                                                  input mem_write,      C:/intelFPGA_pro/21.2/Memory.v// is write signal driven?
+                                                  output [31:0] dout);  // output of the data memory at addr
   integer i;
   // Data memory
   reg [31:0] mem[0: MEM_DEPTH - 1];
@@ -43,13 +43,13 @@ module DataMemory #(parameter MEM_DEPTH = 16384) (input reset,
 
   // TODO
   // Asynchrnously read data from the memory
-  always@(*) begin
-    if(mem_read) dout = mem[dmem_addr];
-  end
+
+  assign dout = mem[dmem_addr];
+
 
   // Synchronously write data to the memory
   // (use dmem_addr to access memory)
-  always @(posedge clk) begin
+  always @(negedge clk) begin
     if(mem_write) mem[dmem_addr] = din;
   end
 

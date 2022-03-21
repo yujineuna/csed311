@@ -4,11 +4,11 @@ module ImmediateGenerator(
     output reg [31:0] imm_gen_out  // output
   );
 
-reg opcode;
+reg [6:0] opcode;
 
   //according to instruction type
 
-  always @(opcode) begin
+  always @(inst) begin
      opcode = inst[6:0];
      if(opcode==`ARITHMETIC_IMM||opcode==`LOAD)
      begin
