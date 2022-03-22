@@ -4,11 +4,10 @@ module PC(
     input [31:0] next_pc,     // input
     output reg [31:0] current_pc   // output
   );
-
-
-initial begin
-    current_pc<=32'b0;
-end
+  
+  initial begin
+  current_pc<=0;
+  end
 
 
 always @(posedge clk)begin

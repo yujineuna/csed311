@@ -7,12 +7,12 @@
 // (e.g., port declarations, remove modules, define new modules, ...)
 // 3. You might need to describe combinational logics to drive them into the module (e.g., mux, and, or, ...)
 // 4. `include files if required
-`define EOF 32'hFFFFFFFF
 
 module CPU(input reset,       // positive reset signal
            input clk,         // clock signal
-           output reg is_halted); // Whehther to finish simulation
+           output is_halted); // Whehther to finish simulation
   /***** Wire declarations *****/
+wire is_halted;
 
 wire [31:0] next_pc;
 wire [31:0] current_pc;
@@ -22,33 +22,34 @@ wire [31:0] tempPc2;//pc+immediatevalue
 wire [31:0] tempPc;//for mux fromPCSrc1
 //for pc
 
-wire [31:0] addr;
-reg [31:0] dout;//for instruction
+wire [31:0] dout;//for instruction
 
 //reg [31:0] rf_data[0:31];
 
 wire [31:0] rs1_dout;
-reg [31:0] rs2_dout;
-wire[31:0] rd_din;
+wire [31:0] rs2_dout;
 wire [31:0] writeData;//alu result or memory value or pc+4
 wire [31:0] memOrALU; //for the mux memReadData's output
 //for register
 wire[31:0] mem_dout;
 //for datamemory
-reg [31:0] imm_gen_out;
+wire [31:0] imm_gen_out;
 //for immediate value generation
 
 
 wire[31:0] alu_in_2;//alu source & mux output
-wire [6:0] alu_op;//output of alu control unit
+wire [3:0] alu_op;//output of alu control unit
 wire alu_bcond;//for bcond
-reg [31:0]alu_reuslt;
+wire [31:0]alu_result;
+
+
+
 //for alu
   
 //constant for pcplus4
-reg [31:0] four;
 
-wire write_enable;
+reg write_enable;
+wire wr_en;
 wire is_jal;
 wire is_jalr; // same as pc_src_2
 wire branch;
@@ -56,27 +57,28 @@ wire mem_read;
 wire mem_to_reg;
 wire mem_write;
 wire alu_src;
+wire reg_write;
 wire pc_to_reg;
 wire is_ecall;
-reg pc_src_1;
-
-
+wire pc_src_1;
 
   /***** Register declarations *****/
-initial begin
-  pc_src_1<=0;
-  is_halted <=0;
-  four <= 32'd4;
-end
 
-always @(is_jal, branch,alu_bcond) begin
-  pc_src_1 <= (branch&alu_bcond) | is_jal;
+
+assign pc_src_1 = (branch&alu_bcond) | is_jal;
+
+
+/*assign wr_en=write_enable;
+
+initial begin
+write_enable=0;
 end
 
 always @(posedge clk) begin
-  if(dout == `EOF) is_halted <= 1;
+if(writeData)
+write_enable=1;
 end
-
+*/
   // ---------- Update program counter ----------
   // PC must be updated on the rising edge (positive edge) of the clock.
   PC pcupdator(
@@ -88,7 +90,7 @@ end
   
   adder pcplus4(
     .add1(current_pc), //input
-    .add2(four), //input
+    .add2(4), //input
     .addout(tempPc1) //output
   );
 
@@ -114,15 +116,16 @@ adder pcplusImm(
     .rs2 (dout[24:20]),          // input
     .rd (dout[11:7]),           // input
     .rd_din (writeData),       // input
-    .write_enable (write_enable),    // input
+    .reg_write(reg_write),    // input
     .rs1_dout (rs1_dout),     // output
-    .rs2_dout (rs2_dout)
+    .rs2_dout(rs2_dout)
     //.rf_data(rf_data)      // output
   );
 
 
   // ---------- Control Unit ----------
   ControlUnit ctrl_unit (
+    .reset(reset),
     .part_of_inst(dout[6:0]),  // input
     .is_jal(is_jal),        // output
     .is_jalr(is_jalr),       // output
@@ -130,10 +133,11 @@ adder pcplusImm(
     .mem_read(mem_read),      // output
     .mem_to_reg(mem_to_reg),    // output
     .mem_write(mem_write),     // output
-    .alu_src(alu_src),       // output
-    .write_enable(write_enable),     // output
+    .alu_src(alu_src),
+    .reg_write(reg_write),       // output   // output
     .pc_to_reg(pc_to_reg),     // output
-    .is_ecall(is_ecall)       // output (ecall inst)
+    .is_ecall(is_ecall),
+    .is_halted(is_halted)      // output (ecall inst)
   );
 
 
@@ -175,22 +179,22 @@ adder pcplusImm(
 
   // ---------- Immediate Generator ----------
   ImmediateGenerator imm_gen(
-    .inst(dout[31:0]),  // input
+    .inst(dout),  // input
     .imm_gen_out(imm_gen_out)    // output
   );
 
   // ---------- ALU Control Unit ----------
   ALUControlUnit alu_ctrl_unit (
-    .part_of_inst(dout[31:0]),  // input
+    .part_of_inst(dout),  // input
     .alu_op(alu_op)         // output
   );
 
   // ---------- ALU ----------
   ALU alu (
     .alu_op(alu_op),      // input
-    .alu_in_1(rs1_dout),    // input  
+    .rs1_dout(rs1_dout),    // input  
     .alu_in_2(alu_in_2),    // input -> mux's output
-    .alu_result(alu_reuslt),  // output
+    .alu_result(alu_result),  // output
     .alu_bcond(alu_bcond)     // output
   );
 
