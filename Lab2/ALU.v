@@ -7,6 +7,7 @@ module ALU(alu_op,rs1_dout,alu_in_2,alu_result,alu_bcond);
 	input [31:0] alu_in_2;
 	output reg [31:0] alu_result;
 	output reg alu_bcond;
+	
 
 initial begin
   alu_result <= 0;
@@ -14,7 +15,7 @@ initial begin
 end
 
 	//calculate depend on op
-	always @(alu_op) begin
+	always @(*) begin
 		alu_result <= 0;
 		alu_bcond <= 0;
 		case(alu_op)

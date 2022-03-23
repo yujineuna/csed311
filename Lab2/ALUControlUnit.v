@@ -50,6 +50,7 @@ end
 			else if(funct3 == `FUNCT3_SRL) alu_op = `SRL;
 			else begin end
 			end
+		`JALR: alu_op = `ADD;
 		`LOAD: alu_op = `ADD;
 		`STORE: alu_op = `ADD;
 		default: begin alu_op <= 4'b1111;end

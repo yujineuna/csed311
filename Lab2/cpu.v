@@ -68,17 +68,7 @@ wire pc_src_1;
 assign pc_src_1 = (branch&alu_bcond) | is_jal;
 
 
-/*assign wr_en=write_enable;
 
-initial begin
-write_enable=0;
-end
-
-always @(posedge clk) begin
-if(writeData)
-write_enable=1;
-end
-*/
   // ---------- Update program counter ----------
   // PC must be updated on the rising edge (positive edge) of the clock.
   PC pcupdator(

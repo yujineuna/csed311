@@ -54,7 +54,8 @@ always@(part_of_inst)begin
 			mem_to_reg = 1;
 			alu_src = 1;
 			end
-		`JALR: begin 
+		`JALR: begin
+		    reg_write = 1; 
 			is_jalr = 1;
 			alu_src = 1;
 			pc_to_reg = 1;
