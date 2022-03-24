@@ -1,6 +1,14 @@
 // Submit this file with other files you created.
 // Do not touch port declarations of the module 'CPU'.
-
+`include "ALU.v"
+`include "ALUControlUnit.v"
+`include "ControlUnit.v"
+`include "immediategenerator.v"
+`include "Memory.v"
+`include "mux.v"
+`include "pc.v"
+`include "RegisterFile.v"
+`include "adder.v"
 // Guidelines
 // 1. It is highly recommened to `define opcodes and something useful.
 // 2. You can modify the module.
