@@ -23,7 +23,7 @@ module InstMemory #(parameter MEM_DEPTH = 1024) (input reset,
       for (i = 0; i < MEM_DEPTH; i = i + 1)
           mem[i] = 32'b0;
       // Provide path of the file including instructions with binary format
-      $readmemh("C:/Users/jangyj2020/Desktop/CSED311/Lab2/loop.txt", mem);
+      $readmemh("C:/Users/dmsgk/lab_2/csed311-master/Lab2/basic_mem.txt", mem);
     end
   end
 
