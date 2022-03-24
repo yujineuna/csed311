@@ -68,6 +68,7 @@ always@(part_of_inst)begin
 		     pc_to_reg = 1; end
 		`ECALL: begin if(rf17==10)is_halted=1;
 		else begin end
+		end
 		default:begin end
 	endcase
 end
