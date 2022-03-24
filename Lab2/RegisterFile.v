@@ -7,13 +7,15 @@ module RegisterFile(input reset,
                     //input wr_en, 
                     input reg_write,         // RegWrite signal
                     output [31:0] rs1_dout,   // output of rs 1
-                    output [31:0] rs2_dout);  // output of rs 2
+                    output [31:0] rs2_dout,
+                    output [31:0]rf17
+                    );  // output of rs 2
   integer i;
   // Register file
 reg [31:0] rf[0:31];
 
 
-
+assign rf17=rf[17];
 assign rs1_dout=rf[rs1];
 assign rs2_dout=rf[rs2];
 //initial begin

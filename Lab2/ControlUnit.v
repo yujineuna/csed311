@@ -3,6 +3,7 @@
 module ControlUnit(
     input reset,
 	input [6:0] part_of_inst,
+	input [31:0] rf17,
 	output reg is_jal, 
 	output reg is_jalr,
 	output reg branch,
@@ -65,7 +66,8 @@ always@(part_of_inst)begin
 		`BRANCH: branch = 1;
 		`JAL: begin is_jal = 1;
 		     pc_to_reg = 1; end
-		`ECALL: begin is_halted=1;end
+		`ECALL: begin if(rf17==10)is_halted=1;
+		else begin end
 		default:begin end
 	endcase
 end

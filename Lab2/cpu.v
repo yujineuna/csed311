@@ -26,6 +26,7 @@ wire [31:0] dout;//for instruction
 
 //reg [31:0] rf_data[0:31];
 
+wire [31:0] rf17;
 wire [31:0] rs1_dout;
 wire [31:0] rs2_dout;
 wire [31:0] writeData;//alu result or memory value or pc+4
@@ -108,7 +109,8 @@ adder pcplusImm(
     .rd_din (writeData),       // input
     .reg_write(reg_write),    // input
     .rs1_dout (rs1_dout),     // output
-    .rs2_dout(rs2_dout)
+    .rs2_dout(rs2_dout),
+    .rf17(rf17)
     //.rf_data(rf_data)      // output
   );
 
@@ -116,7 +118,8 @@ adder pcplusImm(
   // ---------- Control Unit ----------
   ControlUnit ctrl_unit (
     .reset(reset),
-    .part_of_inst(dout[6:0]),  // input
+    .part_of_inst(dout[6:0]),
+    .rf17(rf17),  // input
     .is_jal(is_jal),        // output
     .is_jalr(is_jalr),       // output
     .branch(branch),        // output
