@@ -23,7 +23,7 @@ module InstMemory #(parameter MEM_DEPTH = 1024) (input reset,
       for (i = 0; i < MEM_DEPTH; i = i + 1)
           mem[i] = 32'b0;
       // Provide path of the file including instructions with binary format
-      $readmemh("C:/Users/dmsgk/lab_2/csed311-master/Lab2/basic_mem.txt", mem);
+      $readmemh("/path/to/binary_format/file", mem);
     end
   end
 
@@ -45,10 +45,9 @@ module DataMemory #(parameter MEM_DEPTH = 16384) (input reset,
 
   // TODO
   // Asynchrnously read data from the memory
-always@(*)
-begin if(mem_read)dout=mem[dmem_addr];
+always@(*)begin 
+if(mem_read)begin dout=mem[dmem_addr];end
 end
-
 
   // Synchronously write data to the memory
   // (use dmem_addr to access memory)

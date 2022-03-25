@@ -9,10 +9,10 @@ module ALU(alu_op,rs1_dout,alu_in_2,alu_result,alu_bcond);
 	output reg alu_bcond;
 	
 
-initial begin
+/*initial begin
   alu_result <= 0;
   alu_bcond <= 0;
-end
+end*/
 
 	//calculate depend on op
 	always @(*) begin

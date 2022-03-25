@@ -17,7 +17,7 @@ module ControlUnit(
 	output reg is_halted);
 
 //initialization
-initial begin
+/*initial begin
 is_jal <= 0; //JAL
 is_jalr <= 0; //JALR
 branch <= 0; //Branch
@@ -28,7 +28,7 @@ alu_src <= 0; //ALUSrc
 reg_write<=0;
 pc_to_reg <= 0; //PCtoReg
 is_ecall <= 0; //end sign
-end
+end*/
 
 always@(part_of_inst)begin
    

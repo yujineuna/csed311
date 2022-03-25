@@ -12,12 +12,12 @@ module ALUControlUnit(part_of_inst, alu_op);
 	
 
 //initial aluOp
-initial begin
+/*initial begin
 alu_op <= 4'b1111; //dummy value
 opcode <= 7'b0000000;
 funct3 <= 3'b000;
 is_sub <= 0;
-end
+end*/
 
 	always @(part_of_inst) begin
 		opcode = part_of_inst[6:0];

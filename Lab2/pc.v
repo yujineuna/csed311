@@ -5,10 +5,10 @@ module PC(
     output reg [31:0] current_pc   // output
   );
   
-  initial begin
+  /*initial begin
   current_pc<=0;
   end
-
+*/
 
 always @(posedge clk)begin
     if(reset)begin
