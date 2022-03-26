@@ -10,7 +10,7 @@ module ALUControlUnit(part_of_inst, alu_op);
 	reg is_sub;
 
 
-	always @(part_of_inst) begin
+	always @(*) begin
 		opcode = part_of_inst[6:0];
 		funct3 = part_of_inst[14:12];
 		is_sub = part_of_inst[30];

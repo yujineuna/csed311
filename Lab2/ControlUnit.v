@@ -17,7 +17,7 @@ module ControlUnit(
 	output reg is_halted);
 
 
-always@(part_of_inst)begin
+always@(*)begin
    
 	is_jal = 0;
 	is_jalr = 0;

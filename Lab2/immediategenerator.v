@@ -12,7 +12,7 @@ reg[12:0] imm13;
 reg[20:0] imm22;
 
 
-  always @(inst) begin
+  always @(*) begin
      opcode = inst[6:0];
      if(opcode==`ARITHMETIC_IMM||opcode==`LOAD)
      begin
