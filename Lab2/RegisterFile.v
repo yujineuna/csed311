@@ -18,8 +18,7 @@ reg [31:0] rf[0:31];
 assign rf17=rf[17];
 assign rs1_dout=rf[rs1];
 assign rs2_dout=rf[rs2];
-//initial begin
-// rf_data = r
+
 
 always @(posedge clk) begin 
     if(reg_write&&0<=rd&&rd<=31)begin

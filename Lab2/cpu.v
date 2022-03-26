@@ -24,7 +24,6 @@ wire [31:0] tempPc;//for mux fromPCSrc1
 
 wire [31:0] dout;//for instruction
 
-//reg [31:0] rf_data[0:31];
 
 wire [31:0] rf17;
 wire [31:0] rs1_dout;

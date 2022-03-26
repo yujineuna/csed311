@@ -8,16 +8,7 @@ module ALUControlUnit(part_of_inst, alu_op);
 	reg [6:0] opcode;
 	reg [2:0] funct3;
 	reg is_sub;
-	
-	
 
-//initial aluOp
-/*initial begin
-alu_op <= 4'b1111; //dummy value
-opcode <= 7'b0000000;
-funct3 <= 3'b000;
-is_sub <= 0;
-end*/
 
 	always @(part_of_inst) begin
 		opcode = part_of_inst[6:0];
@@ -53,7 +44,7 @@ end*/
 		`JALR: alu_op = `ADD;
 		`LOAD: alu_op = `ADD;
 		`STORE: alu_op = `ADD;
-		default: begin alu_op <= 4'b1111;end
+		default: begin alu_op = 4'b1111;end
 	endcase
 	end
 endmodule
