@@ -69,7 +69,7 @@ mux2 mem_selector(
   .mux_out(accessMem)
 );//mux before memory
 
-mux data_to_write(
+mux2 data_to_write(
   .mux_in1(ALUOut),
   .mux_in2(MDR),
   .control(mem_to_reg),
@@ -150,7 +150,7 @@ mux2 pcSrc_selector(
     .mem_to_reg(mem_to_reg),    // output
     .mem_write(mem_write),     // output
     .ir_write(ir_write),      // output
-    .write_enable(reg_write),     // output
+    .reg_write(reg_write),     // output
     .pc_source(pc_source),
     .ALU_op(ALU_op),
     .ALU_SrcB(ALU_SrcB),
@@ -161,7 +161,7 @@ mux2 pcSrc_selector(
 
   // ---------- Immediate Generator ----------
   ImmediateGenerator imm_gen(
-    .part_of_inst(IR[31:0]),  // input
+    .inst(IR[31:0]),  // input
     .imm_gen_out(imm_gen_out)    // output
   );
 
