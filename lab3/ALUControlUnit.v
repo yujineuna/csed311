@@ -18,6 +18,7 @@ module ALUControlUnit(part_of_inst,alu_op,func_code);
 		if(alu_op==2'b00)//it is add
 		begin
 			func_code=`ADD;
+			$display("%d\n",func_code);
 		end
 		else if(alu_op==2'b01)
 		begin

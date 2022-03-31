@@ -115,7 +115,7 @@ always@(*)begin //this is microcode controller
 			if(is_itype) begin //for itype: calculate GPR[rs1]+imm and update pc<-pc+4
 				ALU_SrcA = `REG_A;
 				ALU_SrcB = `IMMD;
-				ALU_op = `ADD;
+				ALU_op = `Func;
 				pc_source = 1;
 				pc_write = 1;
 			end
@@ -189,11 +189,7 @@ always@(*)begin //this is microcode controller
 			end
 		end
 	endcase
-end
 
-
-
-always @(posedge clk) begin
 	case(current_state)
 		`STATE_IF: next_state <= `STATE_ID;
 		`STATE_ID: begin
@@ -215,6 +211,11 @@ always @(posedge clk) begin
 		end
 		`STATE_WB: next_state <= `STATE_IF;
 	endcase
+end
+
+
+
+always @(posedge clk) begin
 
 	if(reset)begin
 		current_state <= `STATE_IF;

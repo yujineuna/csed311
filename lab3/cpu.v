@@ -21,7 +21,7 @@ wire[31:0]rs2_dout;
 wire[31:0]imm_gen_out;
 wire[31:0]alu_in_1;
 wire[31:0]alu_in_2;
-wire[31:0]alu_reuslt;
+wire[31:0]alu_result;
 wire[31:0]writeData;
 
 
@@ -45,7 +45,7 @@ wire mem_read;
 wire mem_write;
 wire ir_write;
 wire pc_source;
-wire alu_op;
+wire ALU_op;
 wire ALU_SrcB;
 wire ALU_SrcA;
 wire reg_write;
@@ -168,7 +168,7 @@ mux2 pcSrc_selector(
   // ---------- ALU Control Unit ----------
   ALUControlUnit alu_ctrl_unit(
     .part_of_inst(IR[31:0]),
-    .alu_op(alu_op),  // input
+    .alu_op(ALU_op),  // input
     .func_code(func_code)         // output
   );
 
