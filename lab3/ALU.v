@@ -1,8 +1,8 @@
 `include "AluOps.v"
 
-module ALU(func_code,alu_in_1,alu_in_2,alu_result,alu_bcond);
+module ALU(alu_op,alu_in_1,alu_in_2,alu_result,alu_bcond);
 
-	input [3:0]func_code;
+	input [3:0]alu_op;
 	input [31:0] alu_in_1;
 	input [31:0] alu_in_2;
 	output reg [31:0] alu_result;

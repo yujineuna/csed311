@@ -19,14 +19,15 @@ module Memory #(parameter MEM_DEPTH = 16384) (input reset,
     // Initialize data memory (do not touch)
     if (reset) begin
       for (i = 0; i < MEM_DEPTH; i = i + 1)
-        mem[i] <= 32'b0;
+        mem[i] = 32'b0;
       // Provide path of the file including instructions with binary format
-      $readmemh("/path/to/binary_format/file", mem);
+      $readmemh("C:/Users/jangyj2020/Desktop/CSED311/lab3/basic_mem.txt", mem);
     end
 
     // Synchronously write data to the memory
     else begin
-      if(write_enable&&rd!=0)mem[mem_addr] <= din;
+      if (mem_write)
+        mem[mem_addr] <= din;
     end
   end
 endmodule

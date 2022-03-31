@@ -25,7 +25,7 @@ module RegisterFile(input	reset,
 
     // Synchronously write data to the register
     else begin
-      if (write_enable)
+      if (write_enable && rd != 0)
         rf[rd] <= rd_din;
     end
   end

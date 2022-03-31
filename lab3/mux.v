@@ -21,15 +21,15 @@ always@(*)begin
     begin
         mux_out=mux_in1_1;
     end
-    else if(control=2'b01)
+    else if(control==2'b01)
     begin
         mux_out=mux_in2_1;
     end
-    else if(control=2'b10)
+    else if(control==2'b10)
     begin
         mux_out=mux_in3;
     end
-    else if(control=2'b11)
+    else if(control==2'b11)
     begin
         mux_out=mux_in4;
     end
