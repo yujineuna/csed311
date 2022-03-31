@@ -13,7 +13,7 @@ input [31:0]mux_in1_1;
 input [31:0]mux_in2_1;
 input [31:0]mux_in3;
 input [31:0]mux_in4;
-input control;
+input [1:0]control;
 output reg[31:0] mux_out;
 
 always@(*)begin

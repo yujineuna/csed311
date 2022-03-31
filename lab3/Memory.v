@@ -21,7 +21,7 @@ module Memory #(parameter MEM_DEPTH = 16384) (input reset,
       for (i = 0; i < MEM_DEPTH; i = i + 1)
         mem[i] = 32'b0;
       // Provide path of the file including instructions with binary format
-      $readmemh("C:/Users/jangyj2020/Desktop/CSED311/lab3/basic_mem.txt", mem);
+      $readmemh("C:/csed311/lab3/basic_mem.txt", mem);
     end
 
     // Synchronously write data to the memory
