@@ -24,6 +24,8 @@ wire[31:0]alu_in_2;
 wire[31:0]alu_result;
 wire[31:0]writeData;
 
+always @(posedge clk) begin
+end
 
   /***** Register declarations *****/
   reg [31:0] IR; // instruction register
@@ -45,16 +47,22 @@ wire mem_read;
 wire mem_write;
 wire ir_write;
 wire pc_source;
-wire ALU_op;
-wire ALU_SrcB;
+wire [1:0]ALU_SrcB;
 wire ALU_SrcA;
 wire reg_write;
 wire alu_bcond;
+wire [1:0]ALU_op;
+wire [3:0]func_code;
 
+always @(*)begin
+ if(ir_write) begin if(!IorD)IR <= dout;end
+  if(IorD) MDR <= dout;
+  
+end
 
 
 always @(posedge clk)begin
-  if(!IorD | ir_write) IR <= dout;
+  if(!IorD && ir_write) IR <= dout;
   if(IorD) MDR <= dout;
   A <= rs1_dout;
   B <= rs2_dout;
@@ -63,8 +71,8 @@ end
 
 
 mux2 mem_selector(
-  .mux_in1(ALUOut),
-  .mux_in2(current_pc),
+  .mux_in1(current_pc),
+  .mux_in2(ALUOut),
   .control(IorD),
   .mux_out(accessMem)
 );//mux before memory
@@ -77,11 +85,11 @@ mux2 data_to_write(
 );//determine data to write
 
 mux2 alusrcA_selector(
-  .mux_in1(A),
-  .mux_in2(current_pc),
+  .mux_in1(current_pc),
+  .mux_in2(A),
   .control(ALU_SrcA),
   .mux_out(alu_in_1)
-);
+);//okay
 
 mux4 alusrcB_selector(
   .mux_in1_1(B),
@@ -93,8 +101,8 @@ mux4 alusrcB_selector(
 );
 
 mux2 pcSrc_selector(
-  .mux_in1(ALUOut),
-  .mux_in2(alu_result),
+  .mux_in1(alu_result),
+  .mux_in2(ALUOut),
   .control(pc_source),
   .mux_out(next_pc)
 );
