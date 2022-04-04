@@ -52,7 +52,7 @@ wire reg_write;
 wire alu_bcond;
 wire [1:0]ALU_op;
 wire [3:0]func_code;
-wire[31:0] rf17;
+wire [4:0] rs1;
 
 always @(posedge clk)begin
   if(!IorD && ir_write) IR <= dout;
@@ -61,6 +61,9 @@ always @(posedge clk)begin
   B <= rs2_dout;
   ALUOut <= alu_result;
 end
+
+
+assign is_halted = (is_ecall && rs1_dout==10)? 1:0;
 
 
 mux2 mem_selector(
@@ -100,6 +103,12 @@ mux2 pcSrc_selector(
   .mux_out(next_pc)
 );
 
+mux2 rs1_selector(
+  .mux_in1(IR[19:15]),
+  .mux_in2(5'b10001),
+  .control(is_ecall),
+  .mux_out(rs1)
+);
 
 
   // ---------- Update program counter ----------
@@ -118,15 +127,16 @@ mux2 pcSrc_selector(
   RegisterFile reg_file(
     .reset(reset),        // input
     .clk(clk),          // input
-    .rs1(IR[19:15]),          // input
+    .rs1(rs1),          // input
     .rs2(IR[24:20]),          // input
     .rd(IR[11:7]),           // input
     .rd_din(writeData),       // input
     .write_enable(reg_write),    // input
     .rs1_dout(rs1_dout),     // output
-    .rs2_dout(rs2_dout),
-    .rf17(rf17)      // output
+    .rs2_dout(rs2_dout)     // output
   );
+
+
 
   // ---------- Memory ----------
   Memory memory(
@@ -144,8 +154,7 @@ mux2 pcSrc_selector(
     .clk(clk),
     .reset(reset),
     .part_of_inst(IR[6:0]),
-    .alu_bcond(alu_bcond),
-    .rf17(rf17),  // input
+    .alu_bcond(alu_bcond),  // input
     .pc_write_not_cond(pc_write_not_cond),        // output
     .pc_write(pc_write),       // output
     .IorD(IorD),        // output
@@ -158,9 +167,7 @@ mux2 pcSrc_selector(
     .ALU_op(ALU_op),
     .ALU_SrcB(ALU_SrcB),
     .ALU_SrcA(ALU_SrcA),  // output
-    .is_ecall(is_ecall),
-    .is_halted(is_halted)
-          // output (ecall inst)
+    .is_ecall(is_ecall) // output (ecall inst)
   );
 
   // ---------- Immediate Generator ----------

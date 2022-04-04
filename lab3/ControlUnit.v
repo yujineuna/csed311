@@ -37,7 +37,6 @@ module ControlUnit(
 	input reset,
 	input [6:0] part_of_inst,//instr [6:0]
 	input alu_bcond,
-	input [31:0] rf17,
     output reg pc_write_not_cond,        // output
     output reg pc_write,       // output
     output reg IorD,        // output
@@ -50,8 +49,7 @@ module ControlUnit(
     output reg [1:0] ALU_op,
     output reg [1:0]ALU_SrcB,
     output reg ALU_SrcA,  // output
-    output reg is_ecall,
-	output reg is_halted
+    output reg is_ecall
 	 );
 	
 
@@ -95,8 +93,6 @@ always@(*)begin //this is microcode controller
 		`JAL: begin is_jal = 1; end
 		`ECALL: begin 
 		  is_ecall = 1;
-		  if(rf17==10) 
-		  begin is_halted = 1;end
 		end
 		default:begin end
 	endcase
@@ -120,14 +116,14 @@ pc_write_not_cond=0;
 		//write: IR<-mem[PC]
 		end
 		`STATE_IF2:begin
-		if(is_ecall)begin
-		ALU_SrcA=`PC_A;//pc
-			ALU_SrcB=`FOUR;//offset
-			ALU_op=`ADD;
-			pc_source=`ALU_pc;
-			pc_write=1;
-		end
-		mem_read=1;
+			if(is_ecall)begin
+				ALU_SrcA=`PC_A;//pc
+				ALU_SrcB=`FOUR;//offset
+				ALU_op=`ADD;
+				pc_source=`ALU_pc;
+				pc_write=1;
+			end
+			mem_read=1;
 			IorD=0;
 			ir_write=1;
 		end
