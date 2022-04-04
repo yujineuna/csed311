@@ -24,8 +24,7 @@ wire[31:0]alu_in_2;
 wire[31:0]alu_result;
 wire[31:0]writeData;
 
-always @(posedge clk) begin
-end
+
 
   /***** Register declarations *****/
   reg [31:0] IR; // instruction register
@@ -53,13 +52,7 @@ wire reg_write;
 wire alu_bcond;
 wire [1:0]ALU_op;
 wire [3:0]func_code;
-
-always @(*)begin
- if(ir_write) begin if(!IorD)IR <= dout;end
-  if(IorD) MDR <= dout;
-  
-end
-
+wire[31:0] rf17;
 
 always @(posedge clk)begin
   if(!IorD && ir_write) IR <= dout;
@@ -131,7 +124,8 @@ mux2 pcSrc_selector(
     .rd_din(writeData),       // input
     .write_enable(reg_write),    // input
     .rs1_dout(rs1_dout),     // output
-    .rs2_dout(rs2_dout)      // output
+    .rs2_dout(rs2_dout),
+    .rf17(rf17)      // output
   );
 
   // ---------- Memory ----------
@@ -150,7 +144,8 @@ mux2 pcSrc_selector(
     .clk(clk),
     .reset(reset),
     .part_of_inst(IR[6:0]),
-    .alu_bcond(alu_bcond),  // input
+    .alu_bcond(alu_bcond),
+    .rf17(rf17),  // input
     .pc_write_not_cond(pc_write_not_cond),        // output
     .pc_write(pc_write),       // output
     .IorD(IorD),        // output
@@ -164,7 +159,8 @@ mux2 pcSrc_selector(
     .ALU_SrcB(ALU_SrcB),
     .ALU_SrcA(ALU_SrcA),  // output
     .is_ecall(is_ecall),
-    .is_halted(is_halted)       // output (ecall inst)
+    .is_halted(is_halted)
+          // output (ecall inst)
   );
 
   // ---------- Immediate Generator ----------

@@ -36,7 +36,7 @@ module ALU(alu_op,alu_in_1,alu_in_2,alu_result,alu_bcond);
 			`XOR: alu_result = alu_in_1^alu_in_2;
 			`OR: alu_result = alu_in_1|alu_in_2;
 			`AND: alu_result = alu_in_1&alu_in_2;
-			`SRL: alu_result = alu_in_1>>alu_in_2;
+			`SRL: alu_result = alu_in_1>>$unsigned(alu_in_2);
 			default:begin end
 		endcase
 		end

@@ -2,7 +2,8 @@
 
 
 //state
-`define STATE_IF 3'b000
+`define STATE_IF1 3'b000
+`define STATE_IF2 3'b111
 `define STATE_ID 3'b001
 `define STATE_EX1 3'b010
 `define STATE_EX2 3'b011
@@ -36,6 +37,7 @@ module ControlUnit(
 	input reset,
 	input [6:0] part_of_inst,//instr [6:0]
 	input alu_bcond,
+	input [31:0] rf17,
     output reg pc_write_not_cond,        // output
     output reg pc_write,       // output
     output reg IorD,        // output
@@ -49,10 +51,10 @@ module ControlUnit(
     output reg [1:0]ALU_SrcB,
     output reg ALU_SrcA,  // output
     output reg is_ecall,
-	output reg is_halted );
+	output reg is_halted
+	 );
 	
-	always @(posedge clk)
-	begin end
+
 
 reg [2:0]current_state;
 reg [2:0]next_state;
@@ -93,8 +95,8 @@ always@(*)begin //this is microcode controller
 		`JAL: begin is_jal = 1; end
 		`ECALL: begin 
 		  is_ecall = 1;
-		  //if(rf17==10) 
-		  is_halted = 1;
+		  if(rf17==10) 
+		  begin is_halted = 1;end
 		end
 		default:begin end
 	endcase
@@ -111,11 +113,23 @@ pc_write=0;
 pc_write_not_cond=0;
 
 	case(current_state)
-		`STATE_IF: begin
+		`STATE_IF1: begin
 			mem_read=1;
 			IorD=0;
 			ir_write=1; //IR latching enabled
 		//write: IR<-mem[PC]
+		end
+		`STATE_IF2:begin
+		if(is_ecall)begin
+		ALU_SrcA=`PC_A;//pc
+			ALU_SrcB=`FOUR;//offset
+			ALU_op=`ADD;
+			pc_source=`ALU_pc;
+			pc_write=1;
+		end
+		mem_read=1;
+			IorD=0;
+			ir_write=1;
 		end
 
 		`STATE_ID: begin
@@ -223,7 +237,13 @@ end
 always @(*) begin
 
 	case(current_state)
-		`STATE_IF: next_state = `STATE_ID;
+		`STATE_IF1: begin
+		next_state = `STATE_IF2;
+		end
+		`STATE_IF2:begin
+		if(is_ecall)next_state=`STATE_IF1;
+		else next_state=`STATE_ID;
+		end	
 		`STATE_ID: begin
 			if(is_jal | is_jalr) next_state = `STATE_WB;
 			else next_state = `STATE_EX1;
@@ -233,23 +253,23 @@ always @(*) begin
 			else if(is_rtype | is_itype) next_state = `STATE_WB;
 			else if(is_branch) begin
 				if(alu_bcond) next_state = `STATE_EX2;
-				else next_state = `STATE_IF;
+				else next_state = `STATE_IF1;
 			end
-			else next_state = `STATE_IF;
+			else next_state = `STATE_IF1;
 		end
-		`STATE_EX2: next_state = `STATE_IF;
+		`STATE_EX2: next_state = `STATE_IF1;
 		`STATE_MEM1: begin
 			if(is_load) next_state = `STATE_WB;
-			else next_state = `STATE_IF;
+			else next_state = `STATE_IF1;
 		end
-		`STATE_WB: next_state = `STATE_IF;
+		`STATE_WB: next_state = `STATE_IF1;
 	endcase
 	
 	end
 	
 always @(posedge clk)begin
 	if(reset)begin
-		current_state <= `STATE_IF;
+		current_state <= `STATE_IF1;
 	end
 	else begin
 		current_state <= next_state;
