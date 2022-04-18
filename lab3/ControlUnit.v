@@ -56,6 +56,7 @@ module ControlUnit(
 
 reg [2:0]current_state;
 reg [2:0]next_state;
+
 reg is_rtype;
 reg is_itype;
 reg is_load;
