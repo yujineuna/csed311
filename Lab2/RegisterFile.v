@@ -21,7 +21,7 @@ assign rs2_dout=rf[rs2];
 
 
 always @(posedge clk) begin 
-    if(reg_write&&0<=rd&&rd<=31)begin
+    if(reg_write&&0<=rd&&rd<=31&&rd!=0)begin
     rf[rd]<=rd_din;
   end
 end
