@@ -29,10 +29,14 @@ reg[20:0] imm22;
  imm13={inst[31],inst[7],inst[30:25],inst[11:8],1'b0};
  imm_gen_out=$signed(imm13);
  end
- else if(opcode==`JAL||opcode==`JALR)
+ else if(opcode==`JAL)
  begin
  imm22={inst[31],inst[19:12],inst[20],inst[30:25],inst[24:21],1'b0};
  imm_gen_out=$signed(imm22);
+ end
+ else if(opcode==`JALR)
+ begin
+ imm_gen_out=$signed(inst[31:20]);
  end
 
   end
