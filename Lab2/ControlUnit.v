@@ -52,11 +52,11 @@ always@(*)begin
 		       alu_src = 1; end
 		`BRANCH: branch = 1;
 		`JAL: begin is_jal = 1;
+		     reg_write=1;
 		     pc_to_reg = 1; end
 		`ECALL: begin 
 		  is_ecall = 1;
 		  if(rf17==10) is_halted=1;
-		  else begin end
 		end
 		default:begin end
 	endcase
