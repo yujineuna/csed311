@@ -7,6 +7,7 @@
 // (e.g., port declarations, remove modules, define new modules, ...)
 // 3. You might need to describe combinational logics to drive them into the module (e.g., mux, and, or, ...)
 // 4. `include files if required
+`include "controlSignals.v"
 
 module CPU(input reset,       // positive reset signal
            input clk,         // clock signal
@@ -59,7 +60,7 @@ module CPU(input reset,       // positive reset signal
   reg [31:0] MEM_WB_mem_to_reg_src_2;
   reg[31:0] MEM_WB_rd;
 
-  wire [31:0] next_pc;
+  reg [31:0] next_pc;
   wire [31:0] current_pc;
   wire [4:0] rs1;
   
@@ -70,7 +71,7 @@ module CPU(input reset,       // positive reset signal
 
   wire[31:0] writeData;
 
-   wire mem_read;
+  wire mem_read;
   wire mem_to_reg;
   wire mem_write;
   wire alu_src;
@@ -78,39 +79,52 @@ module CPU(input reset,       // positive reset signal
   wire pc_to_reg;
   wire alu_op;
   wire is_ecall;
+  wire[6:0] control_signal;
+  wire[6:0] control_sigs;
 
   wire [31:0] imm_gen_out;
- wire [3:0]func_code;
+  wire [3:0]func_code;
 
-wire[31:0] f_alu_in1;
-wire[31:0] f_alu_in2;
+  wire[31:0] f_alu_in1;
+  wire[31:0] f_alu_in2;
 
 
-wire[1:0] forward_A;
-wire[1:0] forward_B;
-wire[31:0] f_alu_in_1;
-wire[31:0] f_alu_in_2;
-wire[31:0]real_rs2;
-wire[31:0] alu_result;
+  wire[1:0] forward_A;
+  wire[1:0] forward_B;
+  wire[31:0] f_alu_in_1;
+  wire[31:0] f_alu_in_2;
+  wire[31:0]real_rs2;
+  wire[31:0] alu_result;
+
+  wire PCwrite;
+  wire IFID_write;
+  wire is_hazard;
 
   assign is_halted = (is_ecall && rs1_dout==10)? 1:0;
 
   mux2 rs1_selector(
-  .mux_in1(IF_ID_inst[19:15]),
-  .mux_in2(5'b10001),
-  .control(is_ecall),
-  .mux_out(rs1)
-);
+    .mux_in1(IF_ID_inst[19:15]),
+    .mux_in2(5'b10001),
+    .control(is_ecall),
+    .mux_out(rs1)
+  );
 
   // ---------- Update program counter ----------
   // PC must be updated on the rising edge (positive edge) of the clock.
   PC pc(
     .reset(reset),       // input (Use reset to initialize PC. Initial value must be 0)
     .clk(clk),         // input
+    .PCwrite(PCwrite),   //input
     .next_pc(next_pc),     // input
     .current_pc(current_pc)   // output
   );
   
+  //for pc update
+  always @(posedge clk) begin
+    if(PCwrite) next_pc <= current_pc + 4;
+  end
+
+
   // ---------- Instruction Memory ----------
   InstMemory imem(
     .reset(reset),   // input
@@ -124,7 +138,7 @@ wire[31:0] alu_result;
     if (reset) begin
       IF_ID_inst <= 0;
     end
-    else begin
+    else if(IFID_write) begin
       IF_ID_inst <= iout;
     end
   end
@@ -142,8 +156,6 @@ wire[31:0] alu_result;
     .rs2_dout (rs2_dout)      // output
   );
 
- 
-
 
   // ---------- Control Unit ----------
   ControlUnit ctrl_unit (
@@ -156,6 +168,15 @@ wire[31:0] alu_result;
     .pc_to_reg(pc_to_reg),     // output
     .alu_op(alu_op),        // output
     .is_ecall(is_ecall)       // output (ecall inst)
+  );
+
+  assign control_sigs = {mem_read,mem_to_reg,mem_write,alu_src,write_enable,pc_to_reg,alu_op};
+  //-------control signal stop for stall------
+  mux2 stall_control_sig (
+    .mux_in1(control_sigs),
+    .mux_in2(7'b0000000),
+    .control(is_hazard),
+    .mux_out(control_signal)
   );
 
 
@@ -186,12 +207,12 @@ wire[31:0] alu_result;
     end
     else begin
       //control signal
-      ID_EX_alu_op <= alu_op;     
-      ID_EX_alu_src <= alu_src;
-      ID_EX_mem_write <= mem_write;
-      ID_EX_mem_read <= mem_read;
-      ID_EX_mem_to_reg <= mem_to_reg;
-      ID_EX_reg_write <= write_enable;
+      ID_EX_alu_op <= control_signal[`alu_op];     
+      ID_EX_alu_src <= control_signal[`alu_src];
+      ID_EX_mem_write <= control_signal[`mem_write];
+      ID_EX_mem_read <= control_signal[`mem_read];
+      ID_EX_mem_to_reg <= control_signal[`mem_to_reg];
+      ID_EX_reg_write <= control_signal[`write_enable];
       //data
       ID_EX_rs1_data <= rs1_dout;
       ID_EX_rs2_data <= rs2_dout;
@@ -262,7 +283,10 @@ hazardDetection hunit(
   .use_rs1(IF_ID_inst[19:15]),
   .use_rs2(IF_ID_inst[24:20]),
   .mem_read(ID_EX_mem_read),
-  .reg_write(MEM_WB_reg_write)
+  .reg_write(MEM_WB_reg_write),
+  .PCwrite(PCwrite),            //output
+  .IF_ID_write(IFID_write),     //output
+  .is_hazard(is_hazard)         //output
 ); 
 
 //pc_write를 0으로 if/id write를 0으로 control을 0으로
