@@ -3,7 +3,7 @@
 
 
   // ID_EX_ALU_ctrl_unit_input <= {IF_ID_inst[30],IF_ID_inst[14:12]};
-  //alu_op [6:0] opcodeì—­í• 
+  //alu_op [6:0] opcode?—­?• 
   //IF_ID_inst[30]->is_sub
   //IF_ID_inst [14:12] funct3
 
@@ -19,8 +19,8 @@ module ALUControlUnit(part_of_inst, alu_op,func_code);
 
 
 	always @(*) begin
-		funct3 = part_of_inst[3:1];
-		is_sub = part_of_inst[0];
+		funct3 = part_of_inst[2:0];
+		is_sub = part_of_inst[3];
 	case(alu_op) 
 		`BRANCH: begin
 			if(funct3 == `FUNCT3_BEQ) func_code = `BEQ;
@@ -51,7 +51,7 @@ module ALUControlUnit(part_of_inst, alu_op,func_code);
 		`JALR: func_code = `ADD;
 		`LOAD: func_code = `ADD;
 		`STORE: func_code = `ADD;
-		default: begin alu_op = 4'b1111;end
+		default: begin func_code = 4'b1111;end
 	endcase
 	end
 endmodule

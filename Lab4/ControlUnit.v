@@ -8,7 +8,7 @@ module ControlUnit(
 	output reg alu_src,
 	output reg write_enable,
 	output reg pc_to_reg,
-	output reg alu_op,
+	output reg [6:0]alu_op,
 	output reg is_ecall
 	);
 

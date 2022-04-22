@@ -12,6 +12,9 @@
 module CPU(input reset,       // positive reset signal
            input clk,         // clock signal
            output is_halted); // Whehther to finish simulation
+           
+   always @(posedge clk)begin
+   end
   /***** Wire declarations *****/
   /***** Register declarations *****/
   // You need to modify the width of registers
@@ -22,7 +25,7 @@ module CPU(input reset,       // positive reset signal
   reg [31:0]IF_ID_inst;           // will be used in ID stage
   /***** ID/EX pipeline registers *****/
   // From the control unit
-  reg ID_EX_alu_op;         // will be used in EX stage
+  reg [6:0] ID_EX_alu_op;         // will be used in EX stage
   reg ID_EX_alu_src;        // will be used in EX stage
   reg ID_EX_mem_write;      // will be used in MEM stage
   reg ID_EX_mem_read;       // will be used in MEM stage
@@ -42,8 +45,7 @@ module CPU(input reset,       // positive reset signal
   /***** EX/MEM pipeline registers *****/
   // From the control unit
   reg EX_MEM_mem_write;     // will be used in MEM stage
-  reg EX_MEM_mem_read;      // will be used in MEM stage
-  reg EX_MEM_is_branch;     // will be used in MEM stage
+  reg EX_MEM_mem_read;      // will be used in MEM stage;     // will be used in MEM stage
   reg EX_MEM_mem_to_reg;    // will be used in WB stage
   reg EX_MEM_reg_write;     // will be used in WB stage
   // From others
@@ -77,16 +79,16 @@ module CPU(input reset,       // positive reset signal
   wire alu_src;
   wire write_enable;
   wire pc_to_reg;
-  wire alu_op;
+  wire [6:0]alu_op;
   wire is_ecall;
-  wire[6:0] control_signal;
-  wire[6:0] control_sigs;
+  wire[12:0] control_signal;
+  wire[12:0] control_sigs;
 
   wire [31:0] imm_gen_out;
   wire [3:0]func_code;
 
-  wire[31:0] f_alu_in1;
-  wire[31:0] f_alu_in2;
+  wire[31:0] f_alu_in_1;
+  wire[31:0] f_alu_in_2;
 
 
   wire[1:0] forward_A;
@@ -103,8 +105,8 @@ module CPU(input reset,       // positive reset signal
   assign is_halted = (is_ecall && rs1_dout==10)? 1:0;
 
   mux2 rs1_selector(
-    .mux_in1(IF_ID_inst[19:15]),
-    .mux_in2(5'b10001),
+    .mux_in1(5'b10001),
+    .mux_in2(IF_ID_inst[19:15]),
     .control(is_ecall),
     .mux_out(rs1)
   );
@@ -120,11 +122,10 @@ module CPU(input reset,       // positive reset signal
   );
   
   //for pc update
-  always @(posedge clk) begin
-    if(PCwrite) next_pc <= current_pc + 4;
+  always @(*) begin
+    next_pc = current_pc + 4;
   end
 
-//ì™œ ëª¨ë“ˆì—ìžˆëŠ”ë° ë˜ ??
 
   // ---------- Instruction Memory ----------
   InstMemory imem(
@@ -150,7 +151,7 @@ module CPU(input reset,       // positive reset signal
     .clk (clk),          // inputs
     .rs1 (rs1),          // input
     .rs2 (IF_ID_inst[24:20]),          // input
-    .rd (IF_ID_inst[11:7]),           // input
+    .rd (MEM_WB_rd),           // input
     .rd_din (writeData),       // input
     .write_enable (MEM_WB_reg_write),    // input
     .rs1_dout (rs1_dout),     // output
@@ -171,11 +172,11 @@ module CPU(input reset,       // positive reset signal
     .is_ecall(is_ecall)       // output (ecall inst)
   );
 
-  assign control_sigs = {mem_read,mem_to_reg,mem_write,alu_src,write_enable,pc_to_reg,alu_op};
+  assign control_sigs = {alu_op,mem_read,mem_to_reg,mem_write,alu_src,write_enable,pc_to_reg};
   //-------control signal stop for stall------
   mux2 stall_control_sig (
-    .mux_in1(control_sigs),
-    .mux_in2(7'b0000000),
+    .mux_in1(13'b0000000000000),
+    .mux_in2(control_sigs),
     .control(is_hazard),
     .mux_out(control_signal)
   );
@@ -183,7 +184,7 @@ module CPU(input reset,       // positive reset signal
 
   // ---------- Immediate Generator ----------
   ImmediateGenerator imm_gen(
-    .part_of_inst(IF_ID_inst[31:0]),  // input
+    .inst(IF_ID_inst[31:0]),  // input
     .imm_gen_out(imm_gen_out)    // output
   );
 
@@ -208,7 +209,9 @@ module CPU(input reset,       // positive reset signal
     end
     else begin
       //control signal
-      ID_EX_alu_op <= control_signal[`alu_op];     
+      
+      
+      ID_EX_alu_op <=control_signal[`alu_op+6:`alu_op];    
       ID_EX_alu_src <= control_signal[`alu_src];
       ID_EX_mem_write <= control_signal[`mem_write];
       ID_EX_mem_read <= control_signal[`mem_read];
@@ -234,11 +237,10 @@ module CPU(input reset,       // positive reset signal
 
   // ---------- ALU ----------
   ALU alu (
-    .alu_op(func_code),      // input
+    .alu_op_alu(func_code),      // input
     .alu_in_1(f_alu_in_1),    // input  
     .alu_in_2(f_alu_in_2),    // input
-    .alu_result(alu_result),  // output
-    .alu_zero()     // output ëª°?ë£¨
+    .alu_result(alu_result)  // output    // output ëª??ë£?
   );
 
 
@@ -258,12 +260,12 @@ module CPU(input reset,       // positive reset signal
   );
 
  mux2 rs2orI(
-  .mux_in1(real_rs2),
-  .mux_in2(ID_EX_imm),
+  .mux_in1(ID_EX_imm),
+  .mux_in2(real_rs2),
   .control(ID_EX_alu_src),
   .mux_out(f_alu_in_2)
 );
- // rs2_dataì™€ immì¤‘ ê²°ì •í•˜ëŠ” mux
+ // rs2_data?? immì¤? ê²°ì •?•˜?Š” mux
 
 forwardingUnit funit(
   .rs1_ID(ID_EX_rs1),
@@ -292,7 +294,7 @@ hazardDetection hunit(
   .is_hazard(is_hazard)         //output
 ); 
 
-//pc_writeë¥¼ 0ìœ¼ë¡œ if/id writeë¥¼ 0ìœ¼ë¡œ controlì„ 0ìœ¼ë¡œ
+//pc_writeë¥? 0?œ¼ë¡? if/id writeë¥? 0?œ¼ë¡? control?„ 0?œ¼ë¡?
 
 
 
