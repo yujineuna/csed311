@@ -13,12 +13,11 @@ module hazardDetection(
     output reg is_hazard
     );
 
-    reg USE_rs1;
-    reg USE_rs2;
-
+    wire USE_rs1;
+    wire USE_rs2;
+    assign USE_rs1 = ($signed(use_rs1)==rs1_ID && rs1_ID!=0);
+    assign USE_rs2 = ($signed(use_rs2)==rs2_ID && rs2_ID!=0);
     always @(*) begin
-        USE_rs1 = ($signed(use_rs1)==rs1_ID && rs1_ID!=0);
-        USE_rs2 = ($signed(use_rs2)==rs2_ID && rs2_ID!=0);
         //one stall for Load instruction
         if ((((rs1_ID == rd_EX_MEM) && USE_rs1) || ((rs2_ID == rd_EX_MEM) && use_rs2)) && mem_read) begin
             PCwrite = 0;
@@ -39,3 +38,5 @@ module hazardDetection(
     end
 
 endmodule
+
+//asynchoronoug하게컨트롤주는데

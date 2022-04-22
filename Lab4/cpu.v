@@ -124,6 +124,7 @@ module CPU(input reset,       // positive reset signal
     if(PCwrite) next_pc <= current_pc + 4;
   end
 
+//왜 모듈에있는데 또 ??
 
   // ---------- Instruction Memory ----------
   InstMemory imem(
@@ -242,9 +243,9 @@ module CPU(input reset,       // positive reset signal
 
 
   mux3 alu_src_1(
-    .mux_in1(ID_EX_rs1_data),
-    .mux_in2(writeData),
-    .mux_in3(EX_MEM_alu_out),
+    .mux_in1(ID_EX_rs1_data),//00
+    .mux_in2(writeData),//01
+    .mux_in3(EX_MEM_alu_out),//02
     .control(forward_A),
     .mux_out(f_alu_in_1)
   );
@@ -270,7 +271,9 @@ forwardingUnit funit(
   .rd_EX_MEM(EX_MEM_rd),
   .rd_MEM_WB(MEM_WB_rd),
   .reg_write_EX_MEM(EX_MEM_reg_write),
-  .reg_write_MEM_WB(MEM_WB_reg_write)
+  .reg_write_MEM_WB(MEM_WB_reg_write),
+  .forward_A(forward_A),
+  .forward_B(forward_B)
 
   
 );
