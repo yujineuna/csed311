@@ -3,9 +3,7 @@ module hazardDetection(
     input [31:0] rs1_ID,
     input [31:0] rs2_ID,
     input [31:0] rd_MEM_WB,
-    input [31:0] rd_EX_MEM,
-    input [4:0] use_rs1,
-    input [4:0] use_rs2,
+    input [31:0] rd_ID_EX,
     input mem_read,
     input reg_write,
     output reg PCwrite,
@@ -15,11 +13,13 @@ module hazardDetection(
 
     wire USE_rs1;
     wire USE_rs2;
-    assign USE_rs1 = ($signed(use_rs1)==rs1_ID && rs1_ID!=0);
-    assign USE_rs2 = ($signed(use_rs2)==rs2_ID && rs2_ID!=0);
+
+    assign USE_rs1 = rs1_ID!=0;
+    assign USE_rs2 = rs2_ID!=0;
+    
     always @(*) begin
         //one stall for Load instruction
-        if ((((rs1_ID == rd_EX_MEM) && USE_rs1) || ((rs2_ID == rd_EX_MEM) && use_rs2)) && mem_read) begin
+        if ((((rs1_ID == rd_ID_EX) && USE_rs1) || ((rs2_ID == rd_ID_EX) && USE_rs2)) && mem_read) begin
             PCwrite = 0;
             IF_ID_write = 0;
             is_hazard = 1;
@@ -38,5 +38,3 @@ module hazardDetection(
     end
 
 endmodule
-
-//asynchoronoug하게컨트롤주는데

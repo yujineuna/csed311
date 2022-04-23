@@ -8,13 +8,13 @@
 // 3. You might need to describe combinational logics to drive them into the module (e.g., mux, and, or, ...)
 // 4. `include files if required
 `include "controlSignals.v"
+`include "opcodes.v"
 
 module CPU(input reset,       // positive reset signal
            input clk,         // clock signal
-           output is_halted); // Whehther to finish simulation
+           output reg is_halted); // Whehther to finish simulation
            
-   always @(posedge clk)begin
-   end
+ 
   /***** Wire declarations *****/
   /***** Register declarations *****/
   // You need to modify the width of registers
@@ -87,9 +87,6 @@ module CPU(input reset,       // positive reset signal
   wire [31:0] imm_gen_out;
   wire [3:0]func_code;
 
-  wire[31:0] f_alu_in_1;
-  wire[31:0] f_alu_in_2;
-
 
   wire[1:0] forward_A;
   wire[1:0] forward_B;
@@ -102,7 +99,24 @@ module CPU(input reset,       // positive reset signal
   wire IFID_write;
   wire is_hazard;
 
-  assign is_halted = (is_ecall && rs1_dout==10)? 1:0;
+  reg [31:0] IF_ID_rs1;
+  reg [31:0] IF_ID_rs2;
+  reg [1:0] halted_state;
+
+
+  //halted condition
+  always @(*) begin
+    if((ID_EX_alu_op==`ECALL) && (EX_MEM_dmem_data==10)) halted_state <= 2'b01;
+  end
+
+  always @(posedge clk) begin
+    case (halted_state)
+      2'b01: halted_state <= halted_state + 1;
+      2'b10: is_halted <= 1;
+      default: halted_state <= 0;
+    endcase
+  end
+
 
   mux2 rs1_selector(
     .mux_in1(5'b10001),
@@ -117,15 +131,15 @@ module CPU(input reset,       // positive reset signal
     .reset(reset),       // input (Use reset to initialize PC. Initial value must be 0)
     .clk(clk),         // input
     .PCwrite(PCwrite),   //input
+    .is_halted(halted_state),
     .next_pc(next_pc),     // input
     .current_pc(current_pc)   // output
   );
   
-  //for pc update
   always @(*) begin
-    next_pc = current_pc + 4;
+    if(reset || is_halted) begin end
+    else next_pc = current_pc + 4;//pc update
   end
-
 
   // ---------- Instruction Memory ----------
   InstMemory imem(
@@ -143,6 +157,39 @@ module CPU(input reset,       // positive reset signal
     else if(IFID_write) begin
       IF_ID_inst <= iout;
     end
+  end
+
+  always @(*) begin
+    case(control_signal[`alu_op+6:`alu_op])
+        `ARITHMETIC: begin
+          IF_ID_rs1 = IF_ID_inst[19:15];
+          IF_ID_rs2 = IF_ID_inst[24:20];
+        end
+        `ARITHMETIC_IMM:begin
+          IF_ID_rs1 = IF_ID_inst[19:15];
+          IF_ID_rs2 = 0;
+        end
+        `LOAD:begin
+          IF_ID_rs1 = IF_ID_inst[19:15];
+          IF_ID_rs2 = 0;
+        end
+        `JALR:begin
+          IF_ID_rs1 = IF_ID_inst[19:15];
+          IF_ID_rs2 = 0;
+        end
+        `STORE:begin
+          IF_ID_rs1 = IF_ID_inst[19:15];
+          IF_ID_rs2 = IF_ID_inst[24:20];
+        end
+        `BRANCH: begin
+          IF_ID_rs1 = IF_ID_inst[19:15];
+          IF_ID_rs2 = IF_ID_inst[24:20];
+        end
+        `JAL: begin
+          IF_ID_rs1 = 0;
+          IF_ID_rs2 = 0;
+        end
+      endcase
   end
 
   // ---------- Register File ----------
@@ -209,8 +256,6 @@ module CPU(input reset,       // positive reset signal
     end
     else begin
       //control signal
-      
-      
       ID_EX_alu_op <=control_signal[`alu_op+6:`alu_op];    
       ID_EX_alu_src <= control_signal[`alu_src];
       ID_EX_mem_write <= control_signal[`mem_write];
@@ -222,9 +267,44 @@ module CPU(input reset,       // positive reset signal
       ID_EX_rs2_data <= rs2_dout;
       ID_EX_imm <= imm_gen_out;
       ID_EX_ALU_ctrl_unit_input <= {IF_ID_inst[30],IF_ID_inst[14:12]};
-      ID_EX_rs1 <= IF_ID_inst[19:15];
-      ID_EX_rs2 <= IF_ID_inst[24:20];
-      ID_EX_rd <= IF_ID_inst[11:7];
+      //decide rs1, rs2, rd and imm(0)
+      case(control_signal[`alu_op+6:`alu_op])
+        `ARITHMETIC: begin
+          ID_EX_rs1 <= IF_ID_inst[19:15];
+          ID_EX_rs2 <= IF_ID_inst[24:20];
+          ID_EX_rd <= IF_ID_inst[11:7];
+        end
+        `ARITHMETIC_IMM:begin
+          ID_EX_rs1 <= IF_ID_inst[19:15];
+          ID_EX_rs2 <= 0;
+          ID_EX_rd <= IF_ID_inst[11:7];
+        end
+        `LOAD:begin
+          ID_EX_rs1 <= IF_ID_inst[19:15];
+          ID_EX_rs2 <= 0;
+          ID_EX_rd <= IF_ID_inst[11:7];
+        end
+        `JALR:begin
+          ID_EX_rs1 <= IF_ID_inst[19:15];
+          ID_EX_rs2 <= 0;
+          ID_EX_rd <= IF_ID_inst[11:7];
+        end
+        `STORE:begin
+          ID_EX_rs1 <= IF_ID_inst[19:15];
+          ID_EX_rs2 <= IF_ID_inst[24:20];
+          ID_EX_rd <= 0;
+        end
+        `BRANCH: begin
+          ID_EX_rs1 <= IF_ID_inst[19:15];
+          ID_EX_rs2 <= IF_ID_inst[24:20];
+          ID_EX_rd <= 0;
+        end
+        `JAL: begin
+          ID_EX_rs1 <= 0;
+          ID_EX_rs2 <= 0;
+          ID_EX_rd <= IF_ID_inst[11:7];
+        end
+      endcase
     end
   end
 
@@ -240,7 +320,7 @@ module CPU(input reset,       // positive reset signal
     .alu_op_alu(func_code),      // input
     .alu_in_1(f_alu_in_1),    // input  
     .alu_in_2(f_alu_in_2),    // input
-    .alu_result(alu_result)  // output    // output ëª??ë£?
+    .alu_result(alu_result)  // output 
   );
 
 
@@ -265,37 +345,29 @@ module CPU(input reset,       // positive reset signal
   .control(ID_EX_alu_src),
   .mux_out(f_alu_in_2)
 );
- // rs2_data?? immì¤? ê²°ì •?•˜?Š” mux
 
 forwardingUnit funit(
-  .rs1_ID(ID_EX_rs1),
-  .rs2_ID(ID_EX_rs2),
+  .rs1_EX(ID_EX_rs1),
+  .rs2_EX(ID_EX_rs2),
   .rd_EX_MEM(EX_MEM_rd),
   .rd_MEM_WB(MEM_WB_rd),
   .reg_write_EX_MEM(EX_MEM_reg_write),
   .reg_write_MEM_WB(MEM_WB_reg_write),
   .forward_A(forward_A),
-  .forward_B(forward_B)
-
-  
+  .forward_B(forward_B)  
 );
 
 hazardDetection hunit(
-  .rs1_ID(ID_EX_rs1),
-  .rs2_ID(ID_EX_rs2),
+  .rs1_ID(IF_ID_rs1),
+  .rs2_ID(IF_ID_rs2),
   .rd_MEM_WB(MEM_WB_rd),
-  .rd_EX_MEM(EX_MEM_rd),
-  .use_rs1(IF_ID_inst[19:15]),
-  .use_rs2(IF_ID_inst[24:20]),
+  .rd_ID_EX(ID_EX_rd),
   .mem_read(ID_EX_mem_read),
   .reg_write(MEM_WB_reg_write),
   .PCwrite(PCwrite),            //output
   .IF_ID_write(IFID_write),     //output
   .is_hazard(is_hazard)         //output
 ); 
-
-//pc_writeë¥? 0?œ¼ë¡? if/id writeë¥? 0?œ¼ë¡? control?„ 0?œ¼ë¡?
-
 
 
 
