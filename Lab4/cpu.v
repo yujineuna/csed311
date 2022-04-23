@@ -106,7 +106,7 @@ module CPU(input reset,       // positive reset signal
 
   //halted condition
   always @(*) begin
-    if((ID_EX_alu_op==`ECALL) && (EX_MEM_dmem_data==10)) halted_state <= 2'b01;
+    if((ID_EX_alu_op==`ECALL) && (EX_MEM_alu_out==10)) halted_state <= 2'b01;
   end
 
   always @(posedge clk) begin
