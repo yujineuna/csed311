@@ -31,7 +31,7 @@ module hazardDetection(
             IF_ID_write = 0;
             is_hazard = 1;
         end
-        else if(is_halted >= 1) begin
+        else if(is_halted >= 2) begin
             PCwrite=0;
             IF_ID_write=0;
             is_hazard=1;

@@ -41,6 +41,7 @@ module CPU(input reset,       // positive reset signal
   reg [31:0]ID_EX_rs1;//forwarding
   reg [31:0]ID_EX_rs2;//fowarding
   reg [31:0]ID_EX_rd;
+  reg ID_EX_is_halted;
 
   /***** EX/MEM pipeline registers *****/
   // From the control unit
@@ -52,6 +53,7 @@ module CPU(input reset,       // positive reset signal
   reg [31:0] EX_MEM_alu_out;
   reg [31:0] EX_MEM_dmem_data;
   reg [31:0] EX_MEM_rd;
+  reg EX_MEM_is_halted;
 
   /***** MEM/WB pipeline registers *****/
   // From the control unit
@@ -61,6 +63,7 @@ module CPU(input reset,       // positive reset signal
   reg [31:0] MEM_WB_mem_to_reg_src_1;
   reg [31:0] MEM_WB_mem_to_reg_src_2;
   reg[31:0] MEM_WB_rd;
+  reg MEM_WB_is_halted;
 
   reg [31:0] next_pc;
   wire [31:0] current_pc;
@@ -103,7 +106,8 @@ module CPU(input reset,       // positive reset signal
   reg [31:0] IF_ID_rs2;  
   reg [1:0] halted_state;
 
-  reg halt_type;//0: load to x17, 1: add to x17
+  reg halt_type; //0: load to x17, 1: add to x17
+  reg [2:0]halt_signal;
 
   //halted condition
   always @(*) begin
@@ -122,14 +126,24 @@ module CPU(input reset,       // positive reset signal
   always @(posedge clk) begin
     case (halted_state)
       2'b01: begin
-        if(rs1_dout == 10 && halt_type==0) is_halted <= 1;
-        else if(EX_MEM_alu_out==10 && halt_type==1) is_halted <= 1;
+        if(MEM_WB_mem_to_reg_src_1 == 10 && halt_type==0) halt_signal<= 1;
+        else if(EX_MEM_alu_out==10 && halt_type==1) halt_signal <= 1;
         else halted_state <= 0;
       end
       2'b10: halted_state <= halted_state - 1;
       2'b11: halted_state <= halted_state - 1;
-      default: halted_state <= 0;
+      default: begin
+        halted_state <= 0;
+        halt_signal <= 0;
+      end
     endcase
+  end
+  
+  always@(posedge clk)begin
+    if(halt_signal>=1)
+      halt_signal <= halt_signal + 1;
+    if(halt_signal==4)
+      is_halted <= 1;
   end
   
   mux2 rs1_selector(
@@ -266,7 +280,8 @@ module CPU(input reset,       // positive reset signal
       ID_EX_ALU_ctrl_unit_input <= 0;
       ID_EX_rs1 <= 0; 
       ID_EX_rs2 <= 0; 
-      ID_EX_rd <= 0; 
+      ID_EX_rd <= 0;
+      ID_EX_is_halted <= 0;
     end
     else begin
       //control signal
@@ -319,6 +334,8 @@ module CPU(input reset,       // positive reset signal
           ID_EX_rd <= IF_ID_inst[11:7];
         end
       endcase
+      if (halt_signal==0) ID_EX_is_halted <= 0;
+      else ID_EX_is_halted <= 1;
     end
   end
 
@@ -405,6 +422,7 @@ mux2 DataToWrite
       EX_MEM_reg_write <= 0;
       EX_MEM_mem_write <= 0;
       EX_MEM_mem_read <= 0;
+      EX_MEM_is_halted <= 0;
       //data
       EX_MEM_alu_out <= 0;
       EX_MEM_dmem_data <= 0;
@@ -416,6 +434,7 @@ mux2 DataToWrite
       EX_MEM_reg_write <= ID_EX_reg_write;
       EX_MEM_mem_write <= ID_EX_mem_write;
       EX_MEM_mem_read <= ID_EX_mem_read;
+      EX_MEM_is_halted <= ID_EX_is_halted;
       //EX_MEM_is_branch ??
       //data
       EX_MEM_alu_out <= alu_result;
@@ -441,6 +460,7 @@ mux2 DataToWrite
       //control signal of MEM/WB
       MEM_WB_mem_to_reg <= 0;
       MEM_WB_reg_write <= 0;
+      MEM_WB_is_halted <= 0;
       //data of MEM/WB
       MEM_WB_mem_to_reg_src_1 <= 0;
       MEM_WB_mem_to_reg_src_2 <= 0;
@@ -450,6 +470,7 @@ mux2 DataToWrite
       //control signal of MEM/WB
       MEM_WB_mem_to_reg <= EX_MEM_mem_to_reg;
       MEM_WB_reg_write <= EX_MEM_reg_write;
+      MEM_WB_is_halted <= EX_MEM_is_halted;
       //data of MEM/WB
       MEM_WB_mem_to_reg_src_1 <= dout;
       MEM_WB_mem_to_reg_src_2 <= EX_MEM_alu_out;
