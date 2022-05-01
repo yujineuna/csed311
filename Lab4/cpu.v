@@ -100,24 +100,46 @@ module CPU(input reset,       // positive reset signal
   wire is_hazard;
 
   reg [31:0] IF_ID_rs1;
-  reg [31:0] IF_ID_rs2;
+  reg [31:0] IF_ID_rs2;  
   reg [1:0] halted_state;
 
+  reg halt_type;
+   reg [2:0]halt_signal;//0: load to x17, 1: add to x17
 
   //halted condition
   always @(*) begin
-    if((ID_EX_alu_op==`ECALL) && (EX_MEM_alu_out==10)) halted_state <= 2'b01;
+    if(is_ecall && ID_EX_rd == 17) begin
+      if(ID_EX_alu_op == `LOAD) begin
+        halted_state = 3;
+        halt_type = 0;
+      end
+      else if (ID_EX_alu_op==`ARITHMETIC | ID_EX_alu_op==`ARITHMETIC_IMM) begin
+        halted_state = 2;
+        halt_type = 1;
+      end
+    end
   end
 
   always @(posedge clk) begin
     case (halted_state)
-      2'b01: halted_state <= halted_state + 1;
-      2'b10: is_halted <= 1;
+      2'b01: begin
+        if(rs1_dout == 10 && halt_type==0) halt_signal<= 1;
+        else if(EX_MEM_alu_out==10 && halt_type==1) halt_signal <= 1;
+        else halted_state <= 0;
+      end
+      2'b10: halted_state <= halted_state - 1;
+      2'b11: halted_state <= halted_state - 1;
       default: halted_state <= 0;
     endcase
   end
-
-
+  
+  always@(posedge clk)begin
+  if(halt_signal>=1)
+  halt_signal<=halt_signal+1;
+  if(halt_signal==4)
+  is_halted<=1;
+  end
+  
   mux2 rs1_selector(
     .mux_in1(5'b10001),
     .mux_in2(IF_ID_inst[19:15]),
@@ -364,6 +386,7 @@ hazardDetection hunit(
   .rd_ID_EX(ID_EX_rd),
   .mem_read(ID_EX_mem_read),
   .reg_write(MEM_WB_reg_write),
+  .is_halted(halted_state),
   .PCwrite(PCwrite),            //output
   .IF_ID_write(IFID_write),     //output
   .is_hazard(is_hazard)         //output

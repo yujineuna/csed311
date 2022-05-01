@@ -6,6 +6,7 @@ module hazardDetection(
     input [31:0] rd_ID_EX,
     input mem_read,
     input reg_write,
+    input [1:0]is_halted,
     output reg PCwrite,
     output reg IF_ID_write,
     output reg is_hazard
@@ -29,6 +30,11 @@ module hazardDetection(
             PCwrite = 0;
             IF_ID_write = 0;
             is_hazard = 1;
+        end
+        else if(is_halted >= 2) begin
+            PCwrite=0;
+            IF_ID_write=0;
+            is_hazard=1;
         end
         else begin
             PCwrite = 1;
