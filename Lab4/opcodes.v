@@ -17,7 +17,7 @@
 //`define AUIPC           7'b0010111
 // J-type instruction opcodes
 `define JAL             7'b1101111 //rd
-
+`define BUBBLE 7'b0000000
 
 `define ECALL           7'b1110011
 

@@ -22,9 +22,17 @@ module CPU(input reset,       // positive reset signal
   // 1. You might need other pipeline registers that are not described below
   // 2. You might not need registers described below
   /***** IF/ID pipeline registers *****/
-  reg [31:0]IF_ID_inst;           // will be used in ID stage
+  reg [31:0]IF_ID_inst;
+  reg [31:0] IF_ID_pred_pc; 
+  reg [31:0] IF_ID_current_pc;
+         // will be used in ID stage
   /***** ID/EX pipeline registers *****/
   // From the control unit
+  reg [31:0] ID_EX_pred_pc;
+  reg [31:0] ID_EX_current_pc; 
+  reg ID_EX_is_jal;
+  reg ID_EX_is_jalr;
+  reg ID_EX_branch;
   reg [6:0] ID_EX_alu_op;         // will be used in EX stage
   reg ID_EX_alu_src;        // will be used in EX stage
   reg ID_EX_mem_write;      // will be used in MEM stage
@@ -42,8 +50,10 @@ module CPU(input reset,       // positive reset signal
   reg [31:0]ID_EX_rs2;//fowarding
   reg [31:0]ID_EX_rd;
 
+
   /***** EX/MEM pipeline registers *****/
   // From the control unit
+  
   reg EX_MEM_mem_write;     // will be used in MEM stage
   reg EX_MEM_mem_read;      // will be used in MEM stage;     // will be used in MEM stage
   reg EX_MEM_mem_to_reg;    // will be used in WB stage
@@ -81,12 +91,18 @@ module CPU(input reset,       // positive reset signal
   wire pc_to_reg;
   wire [6:0]alu_op;
   wire is_ecall;
-  wire[12:0] control_signal;
-  wire[12:0] control_sigs;
+
+  wire is_jal;
+  wire is_jalr;
+  wire is_branch;
+  wire is_bubble;
+
+  wire[15:0] control_signal;
+  wire[15:0] control_sigs;
 
   wire [31:0] imm_gen_out;
   wire [3:0]func_code;
-
+  wire alu_bcond;
 
   wire[1:0] forward_A;
   wire[1:0] forward_B;
@@ -158,11 +174,8 @@ module CPU(input reset,       // positive reset signal
     .current_pc(current_pc)   // output
   );
   
-  always @(*) begin
-    if(reset || is_halted) begin end
-    else next_pc = current_pc + 4;//pc update
-  end
-
+  //****************//
+  //then How can I update PC?
   // ---------- Instruction Memory ----------
   InstMemory imem(
     .reset(reset),   // input
@@ -171,15 +184,37 @@ module CPU(input reset,       // positive reset signal
     .dout(iout)     // output
   );
 
+
+  wire taken;
+  wire [31:0] pred_pc;
+  reg btb_update;
+  reg [4:0]write_index;
+  reg [25:0]tag_write;
+
+
+  branchpredictor bp(
+  .pc(pc),
+  .btb_update(btb_update),
+  .real_pc(real_pc),
+  .write_index( write_index),
+  .tag_write(tag_write),
+  .pred_pc( pred_pc),
+  .taken(taken)
+  );
+
   // Update IF/ID pipeline registers here
   always @(posedge clk) begin
     if (reset) begin
       IF_ID_inst <= 0;
+      IF_ID_pred_pc<=0;
+      IF_ID_current_pc<=0;
     end
     else if(IFID_write) begin
       IF_ID_inst <= iout;
+      IF_ID_pred_pc<=pred_pc;
+      IF_ID_current_pc<=current_pc;// is this has a relation ship with IFID_write?maybe,,,yes?
+      end
     end
-  end
 
   always @(*) begin
     case(control_signal[`alu_op+6:`alu_op])
@@ -238,15 +273,19 @@ module CPU(input reset,       // positive reset signal
     .write_enable(write_enable),  // output
     .pc_to_reg(pc_to_reg),     // output
     .alu_op(alu_op),        // output
-    .is_ecall(is_ecall)       // output (ecall inst)
+    .is_ecall(is_ecall),
+    .is_jal(is_jal),
+    .is_jalr(is_jalr),
+    .branch(branch),
+    .is_bubble(is_bubble)      // output (ecall inst)
   );
 
-  assign control_sigs = {alu_op,mem_read,mem_to_reg,mem_write,alu_src,write_enable,pc_to_reg};
+  assign control_sigs = {is_jal,is_jalr,branch,alu_op,mem_read,mem_to_reg,mem_write,alu_src,write_enable,pc_to_reg};
   //-------control signal stop for stall------
   mux2 stall_control_sig (
-    .mux_in1(13'b0000000000000),
+    .mux_in1(16'b0000000000000000),
     .mux_in2(control_sigs),
-    .control(is_hazard),
+    .control(is_hazard||is_bubble),
     .mux_out(control_signal)
   );
 
@@ -275,9 +314,14 @@ module CPU(input reset,       // positive reset signal
       ID_EX_rs1 <= 0; 
       ID_EX_rs2 <= 0; 
       ID_EX_rd <= 0; 
+      ID_EX_pred_pc<=0;
+      ID_EX_current_pc<=0;
     end
     else begin
       //control signal
+      ID_EX_is_jal<=control_signal[`is_jal];
+      ID_EX_is_jalr<=control_signal[`is_jalr];
+      ID_EX_branch<=control_signal[`branch];
       ID_EX_alu_op <=control_signal[`alu_op+6:`alu_op];    
       ID_EX_alu_src <= control_signal[`alu_src];
       ID_EX_mem_write <= control_signal[`mem_write];
@@ -289,6 +333,8 @@ module CPU(input reset,       // positive reset signal
       ID_EX_rs2_data <= rs2_dout;
       ID_EX_imm <= imm_gen_out;
       ID_EX_ALU_ctrl_unit_input <= {IF_ID_inst[30],IF_ID_inst[14:12]};
+      ID_EX_pred_pc<=IF_ID_pred_pc;
+      ID_EX_current_pc<=IF_ID_current_pc;
       //decide rs1, rs2, rd and imm(0)
       case(control_signal[`alu_op+6:`alu_op])
         `ARITHMETIC: begin
@@ -330,6 +376,75 @@ module CPU(input reset,       // positive reset signal
     end
   end
 
+
+
+//for computing real controlflow destination
+reg [31:0] real_pc;
+reg need_bubble;
+//If ID_EX_branch signal is 1 then compare actual ALU(alu_result(in wire))outcome with ID_EX_pred_pc
+
+
+
+//only taken branches and jumps are held in BTB
+
+//if branch is not taken btb does not change
+//if branch is taken btb changes
+//if jal/ jalr instruction btb changes
+
+always @(*)begin
+if(ID_EX_branch)begin
+if(!alu_bcond) begin
+real_pc=ID_EX_current_pc+4;end
+else begin
+real_pc=ID_EX_current_pc+ID_EX_imm;
+end
+end
+else if(ID_EX_jalr||ID_EX_is_jal)begin
+  real_pc=alu_result;
+end
+else begin real_pc=0;end
+end
+
+
+always @(*)begin
+if(ID_EX_branch&&alu_bcond==1&&(real_pc!=ID_EX_pred_pc))
+begin need_bubble=1;end
+else if(ID_EX_branch&&alu_bcond!=1)
+begin need_bubble=0;end
+else if(ID_EX_branch&&alu_bcond&&real_pc==ID_EX_pred_pc)
+begin need_bubble=0;end
+else if((is_jal||is_jalr)&&(real_pc!=ID_EX_pred_pc))
+begin need_bubble=1;end
+else begin need_bubble=0;end
+end
+
+mux2 predOrALU
+(.mux_in1(pred_pc),//predpc or ALU_result
+.mux_in2(real_pc), //ALU_result
+.control(need_bubble),//compare_result
+.mux_out(next_pc));// next_pc
+
+//two bubble if compare_result is 0
+
+always @(*) begin//in both IF &ID make bubble
+if(need_bubble)begin
+control_sigs=0;//in ID stage
+iout[6:0]=7'b0000000;//interpret it as bubble in IF/ID stage
+
+//btb table update is needed
+btb_update=1;
+write_index=ID_EX_current_pc[6:2];
+tag_write=ID_EX_current_pc[31:7];
+//ID_EX_current_pc의 index값에 있는 것 write_sig1로 해서바꿔줌
+end
+end
+
+
+
+
+
+
+
   // ---------- ALU Control Unit ----------
   ALUControlUnit alu_ctrl_unit (
     .part_of_inst(ID_EX_ALU_ctrl_unit_input),
@@ -342,7 +457,8 @@ module CPU(input reset,       // positive reset signal
     .alu_op_alu(func_code),      // input
     .alu_in_1(f_alu_in_1),    // input  
     .alu_in_2(f_alu_in_2),    // input
-    .alu_result(alu_result)  // output 
+    .alu_result(alu_result),
+    .alu_bcond(alu_bcond)  // output 
   );
 
 
