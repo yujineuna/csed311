@@ -1,19 +1,21 @@
 module branchpredictor(
-
-input [31:0] pc;
-input btb_update;
-input [31:0] real_pc;
-input [4:0] write_index;
-input [24:0] tag_write;
-output reg[31:0] pred_pc;
-output reg taken;
+input reset,
+input clk,
+input [31:0] pc,
+input btb_update,
+input [31:0] real_pc,
+input [4:0] write_index,
+input [24:0] tag_write,
+output reg[31:0] pred_pc,
+output reg taken
 );
 
+integer i;
 reg [24:0] tag_table[0:31];
 reg[31:0] btb[0:31];
 
 
-//memory reset들어갔을떄 초기화
+//memory reset?��?��갔을?�� 초기?��
 
 wire [4:0] btb_idx;
 wire [24:0] tag;
@@ -24,6 +26,15 @@ assign tag=pc[31:7];
 //when read asynchronous?
 
 always @(*) begin
+    if(reset)begin //btb initialziation
+        for(i = 0; i < 32; i = i + 1)begin
+            tag_table[i]=25'bZZZZZZZZZZZZZZZZZZZZZZZZZ;
+            btb[i]=32'bZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ;
+        end
+        taken=0;
+        pred_pc=0;
+   end
+   else begin
     if(tag==tag_table[btb_idx])
     begin
     taken=1;
@@ -34,12 +45,15 @@ always @(*) begin
     taken=0;
     pred_pc=pc+4;
     end
+
+   end
+
 end
 
-//taken이 1이아니라 0일경우 nextpc를 pc+4로 update함 아닐 시 real_pc로 업데이트.
 
 //when write btb to real_pc //synchoronous or asynchoronous?
-always @(posedge clk)
+always @(posedge clk) begin
+
 if(btb_update)
 begin
    btb[write_index]<=real_pc;

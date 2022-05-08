@@ -1,6 +1,6 @@
 `include "AluOps.v"
 
-module ALU(alu_op_alu,alu_in_1,alu_in_2,alu_result);
+module ALU(alu_op_alu,alu_in_1,alu_in_2,alu_result,alu_bcond);
 
 	input [3:0]alu_op_alu;
 	input [31:0] alu_in_1;

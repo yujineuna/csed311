@@ -3,7 +3,7 @@
 
 
   // ID_EX_ALU_ctrl_unit_input <= {IF_ID_inst[30],IF_ID_inst[14:12]};
-  //alu_op [6:0] opcode?—­?• 
+  //alu_op [6:0] opcode?ï¿½ï¿½?ï¿½ï¿½
   //IF_ID_inst[30]->is_sub
   //IF_ID_inst [14:12] funct3
 
@@ -48,6 +48,7 @@ module ALUControlUnit(part_of_inst, alu_op,func_code);
 			else if(funct3 == `FUNCT3_SRL) func_code = `SRL;
 			else begin end
 			end
+		`JAL:func_code=`ADD;
 		`JALR: func_code = `ADD;
 		`LOAD: func_code = `ADD;
 		`STORE: func_code = `ADD;

@@ -34,6 +34,7 @@ always@(*)begin
 	pc_to_reg = 0;
 	alu_op = part_of_inst[6:0];
 	is_ecall = 0;
+	is_bubble=0;
 	case (part_of_inst)
 		`ARITHMETIC : write_enable = 1;
 		`ARITHMETIC_IMM :begin
