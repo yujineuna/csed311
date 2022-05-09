@@ -140,8 +140,7 @@ wire [31:0] next_pc;
   reg [31:0] real_pc;
   reg need_bubble;
   
-  
->>>>>>> 0ea467eecb24964863e31c32b309b6c25dea675f
+ 
 
   //---------------------------halted condition
   always @(*) begin
@@ -350,15 +349,10 @@ wire [31:0] next_pc;
       ID_EX_imm <= 0; 
       ID_EX_ALU_ctrl_unit_input <= 0;
       ID_EX_rs1 <= 0; 
-      ID_EX_rs2 <= 0; 
-<<<<<<< HEAD
-      ID_EX_rd <= 0;
-      ID_EX_is_halted <= 0;
-=======
+      ID_EX_rs2 <= 0;
       ID_EX_rd <= 0; 
       ID_EX_pred_pc<=0;
       ID_EX_current_pc<=0;
->>>>>>> 0ea467eecb24964863e31c32b309b6c25dea675f
     end
     else begin
       //control signal
@@ -575,12 +569,8 @@ hazardDetection hunit(
       EX_MEM_reg_write <= 0;
       EX_MEM_mem_write <= 0;
       EX_MEM_mem_read <= 0;
-<<<<<<< HEAD
-      EX_MEM_is_halted <= 0;
-=======
       EX_MEM_pc_to_reg<=0;
       EX_MEM_current_pc<=0;
->>>>>>> 0ea467eecb24964863e31c32b309b6c25dea675f
       //data
       EX_MEM_alu_out <= 0;
       EX_MEM_dmem_data <= 0;
@@ -592,13 +582,8 @@ hazardDetection hunit(
       EX_MEM_reg_write <= ID_EX_reg_write;
       EX_MEM_mem_write <= ID_EX_mem_write;
       EX_MEM_mem_read <= ID_EX_mem_read;
-<<<<<<< HEAD
-      EX_MEM_is_halted <= ID_EX_is_halted;
-      //EX_MEM_is_branch ??
-=======
       EX_MEM_pc_to_reg<=ID_EX_pc_to_reg;
       EX_MEM_current_pc<=ID_EX_current_pc;
->>>>>>> 0ea467eecb24964863e31c32b309b6c25dea675f
       //data
       EX_MEM_alu_out <= alu_result;
       EX_MEM_dmem_data <= real_rs2;
@@ -625,12 +610,8 @@ hazardDetection hunit(
       //control signal of MEM/WB
       MEM_WB_mem_to_reg <= 0;
       MEM_WB_reg_write <= 0;
-<<<<<<< HEAD
-      MEM_WB_is_halted <= 0;
-=======
       MEM_WB_pc_to_reg<=0;
       MEM_WB_current_pc<=0;
->>>>>>> 0ea467eecb24964863e31c32b309b6c25dea675f
       //data of MEM/WB
       MEM_WB_mem_to_reg_src_1 <= 0;
       MEM_WB_mem_to_reg_src_2 <= 0;
@@ -640,12 +621,8 @@ hazardDetection hunit(
       //control signal of MEM/WB
       MEM_WB_mem_to_reg <= EX_MEM_mem_to_reg;
       MEM_WB_reg_write <= EX_MEM_reg_write;
-<<<<<<< HEAD
-      MEM_WB_is_halted <= EX_MEM_is_halted;
-=======
       MEM_WB_pc_to_reg<=EX_MEM_pc_to_reg;
       MEM_WB_current_pc<=EX_MEM_current_pc;
->>>>>>> 0ea467eecb24964863e31c32b309b6c25dea675f
       //data of MEM/WB
       MEM_WB_mem_to_reg_src_1 <= dout;
       MEM_WB_mem_to_reg_src_2 <= EX_MEM_alu_out;
