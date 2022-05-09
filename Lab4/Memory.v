@@ -7,10 +7,15 @@ module InstMemory #(parameter MEM_DEPTH = 1024) (input reset,
   reg [31:0] mem[0:MEM_DEPTH - 1];
   // Do not touch imem_addr
   wire [31:0] imem_addr;
+  
   assign imem_addr = {2'b00, addr >> 2};
 
+  // TODO
   // Asynchronously read instruction from the memory 
-  assign dout = mem[imem_addr];
+  // (use imem_addr to access memory)
+  
+  assign dout=mem[imem_addr];
+  
 
   // Initialize instruction memory (do not touch except path)
   always @(posedge clk) begin
@@ -18,7 +23,11 @@ module InstMemory #(parameter MEM_DEPTH = 1024) (input reset,
       for (i = 0; i < MEM_DEPTH; i = i + 1)
           mem[i] = 32'b0;
       // Provide path of the file including instructions with binary format
+<<<<<<< HEAD
       $readmemh("C:/Users/jangyj2020/Desktop/CSED311/Lab4/non_control_flow_mem.txt", mem);
+=======
+      $readmemh("C:/csed311/Lab4/recursive_mem.txt", mem);
+>>>>>>> 0ea467eecb24964863e31c32b309b6c25dea675f
     end
   end
 
@@ -30,7 +39,7 @@ module DataMemory #(parameter MEM_DEPTH = 16384) (input reset,
                                                   input [31:0] din,     // data to be written
                                                   input mem_read,       // is read signal driven?
                                                   input mem_write,      // is write signal driven?
-                                                  output [31:0] dout);  // output of the data memory at addr
+                                                  output reg[31:0] dout);  // output of the data memory at addr
   integer i;
   // Data memory
   reg [31:0] mem[0: MEM_DEPTH - 1];
@@ -38,12 +47,17 @@ module DataMemory #(parameter MEM_DEPTH = 16384) (input reset,
   wire [31:0] dmem_addr;
   assign dmem_addr = {2'b00, addr >> 2};
 
+  // TODO
   // Asynchrnously read data from the memory
+always@(*)begin 
+if(mem_read)begin dout=mem[dmem_addr];end
+end
+
   // Synchronously write data to the memory
-  assign dout = (mem_read) ? mem[dmem_addr] : 32'b0;
+  // (use dmem_addr to access memory)
   always @(posedge clk) begin
-    if (mem_write)
-      mem[dmem_addr] <= din;
+    if(mem_write) begin mem[dmem_addr] <= din;
+    end
   end
 
   // Initialize data memory (do not touch)
