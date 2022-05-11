@@ -298,7 +298,7 @@ module CPU(input reset,       // positive reset signal
 
   // Update ID/EX pipeline registers here
   always @(posedge clk) begin
-    if (reset||need_bubble) begin
+    if (reset || need_bubble || halt_signal) begin
       //control signal
       ID_EX_is_jal <= 0;
       ID_EX_is_jalr <= 0;
@@ -469,7 +469,7 @@ hazardDetection hunit(
 
   // Update EX/MEM pipeline registers here
   always @(posedge clk) begin
-    if (reset) begin
+    if (reset || (halt_signal && !halt_type)) begin
       //control signal
       EX_MEM_mem_to_reg <= 0;
       EX_MEM_pc_to_reg <= 0;
