@@ -21,11 +21,7 @@ module Memory #(parameter MEM_DEPTH = 16384) (input reset,
       for (i = 0; i < MEM_DEPTH; i = i + 1)
         mem[i] = 32'b0;
       // Provide path of the file including instructions with binary format
-<<<<<<< HEAD
-      $readmemh("C:/Users/jangyj2020/Desktop/ifelse_mem.txt", mem);
-=======
-      $readmemh("C:/csed311/lab3/recursive_mem.txt", mem);
->>>>>>> ad05eb2e806da2a3d4564207254bafee89c2d595
+      $readmemh("C:/csed311/Lab2/non_control_flow_mem.txt", mem);
     end
 
     // Synchronously write data to the memory
