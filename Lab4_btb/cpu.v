@@ -130,10 +130,6 @@ wire [31:0] next_pc;
   reg [31:0] IF_ID_rs2;  
   reg [1:0] halted_state;
 
-<<<<<<< HEAD
-  reg halt_type; //0: load to x17, 1: add to x17
-  reg [2:0]halt_signal;
-=======
   reg halt_type;
   reg [2:0]halt_signal;
    

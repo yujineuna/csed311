@@ -212,7 +212,7 @@ module CPU(input reset,       // positive reset signal
   wire [31:0] pred_pc;
   reg btb_update;
   reg [4:0]write_index;
-  reg [24:0]tag_write;
+  reg [31:0]tag_write;
   reg [1:0]real_taken;
 
   branchpredictor bp(
@@ -221,7 +221,7 @@ module CPU(input reset,       // positive reset signal
   .pc(current_pc),
   .btb_update(btb_update),
   .real_pc(real_pc),
-  .write_index( write_index),
+  .write_index(write_index),
   .tag_write(tag_write),
   .real_taken(real_taken),
   .pred_pc(pred_pc),
@@ -477,17 +477,14 @@ if(need_bubble)begin//interpret it as bubble in IF/ID stage
 //btb table update is needed
 btb_update=1;
 write_index=ID_EX_current_pc[6:2];
-tag_write=ID_EX_current_pc[31:7];
+tag_write=ID_EX_current_pc[31:0];
 end
 else begin
 btb_update=0;
 write_index=ID_EX_current_pc[6:2];
-tag_write=ID_EX_current_pc[31:7];
+tag_write=ID_EX_current_pc[31:0];
 end
 end
-
-
-
 
 
 
