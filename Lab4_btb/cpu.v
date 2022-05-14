@@ -50,7 +50,6 @@ module CPU(input reset,       // positive reset signal
   reg [31:0]ID_EX_rs1;//forwarding
   reg [31:0]ID_EX_rs2;//fowarding
   reg [31:0]ID_EX_rd;
-  reg ID_EX_is_halted;
 
 
   /***** EX/MEM pipeline registers *****/
@@ -65,7 +64,6 @@ module CPU(input reset,       // positive reset signal
   reg [31:0] EX_MEM_alu_out;
   reg [31:0] EX_MEM_dmem_data;
   reg [31:0] EX_MEM_rd;
-  reg EX_MEM_is_halted;
 
   /***** MEM/WB pipeline registers *****/
   // From the control unit
@@ -77,9 +75,8 @@ module CPU(input reset,       // positive reset signal
   reg [31:0] MEM_WB_mem_to_reg_src_1;
   reg [31:0] MEM_WB_mem_to_reg_src_2;
   reg[31:0] MEM_WB_rd;
-  reg MEM_WB_is_halted;
 
-wire [31:0] next_pc;
+reg [31:0] next_pc;
   wire [31:0] current_pc;
   wire [4:0] rs1;
   
@@ -134,9 +131,9 @@ wire [31:0] next_pc;
   reg [2:0]halt_signal;
    
   reg [31:0] real_pc;
-  reg need_bubble;
-  
- 
+  reg need_update;
+  reg need_change;
+    
 
   //---------------------------halted condition
   always @(*) begin
@@ -155,24 +152,21 @@ wire [31:0] next_pc;
   always @(posedge clk) begin
     case (halted_state)
       2'b01: begin
-        if(MEM_WB_mem_to_reg_src_1 == 10 && halt_type==0) halt_signal<= 1;
+        if(rs1_dout == 10 && halt_type==0) halt_signal<= 1;
         else if(EX_MEM_alu_out==10 && halt_type==1) halt_signal <= 1;
         else halted_state <= 0;
       end
       2'b10: halted_state <= halted_state - 1;
       2'b11: halted_state <= halted_state - 1;
-      default: begin
-        halted_state <= 0;
-        halt_signal <= 0;
-      end
+      default: halted_state <= 0;
     endcase
   end
   
   always@(posedge clk)begin
-    if(halt_signal>=1)
-      halt_signal <= halt_signal + 1;
-    if(halt_signal==4)
-      is_halted <= 1;
+  if(halt_signal>=1)
+  halt_signal<=halt_signal+1;
+  if(halt_signal==4)
+  is_halted<=1;
   end
   //-------------------halted condition end
 
@@ -194,6 +188,8 @@ wire [31:0] next_pc;
     .current_pc(current_pc)   // output
   );
   
+
+  
   //****************//
   //then How can I update PC?
   // ---------- Instruction Memory ----------
@@ -204,10 +200,10 @@ wire [31:0] next_pc;
     .dout(iout)     // output
   );
   
-  mux2 ioutorBubble(
+ mux2 ioutorBubble(
   .mux_in1({iout[31:7],7'bZZZZZZZ}),
   .mux_in2(iout),
-  .control(need_bubble),
+  .control(need_change),
   .mux_out(inst)); // for IF instruction bubble
 
 
@@ -314,7 +310,7 @@ wire [31:0] next_pc;
   mux2 stall_control_sig (
     .mux_in1(16'b0000000000000000),
     .mux_in2(control_sigs),
-    .control(is_hazard||is_bubble||need_bubble),
+    .control(is_hazard||need_change||is_bubble),
     .mux_out(control_signal)
   );
 
@@ -327,7 +323,7 @@ wire [31:0] next_pc;
 
   // Update ID/EX pipeline registers here
   always @(posedge clk) begin
-    if (reset) begin
+    if (reset||need_change||halt_signal) begin
       //control signal
       ID_EX_is_jal<=0;
       ID_EX_is_jalr<=0;
@@ -345,7 +341,7 @@ wire [31:0] next_pc;
       ID_EX_imm <= 0; 
       ID_EX_ALU_ctrl_unit_input <= 0;
       ID_EX_rs1 <= 0; 
-      ID_EX_rs2 <= 0;
+      ID_EX_rs2 <= 0; 
       ID_EX_rd <= 0; 
       ID_EX_pred_pc<=0;
       ID_EX_current_pc<=0;
@@ -407,8 +403,6 @@ wire [31:0] next_pc;
           ID_EX_rd <= IF_ID_inst[11:7];
         end
       endcase
-      if (halt_signal==0) ID_EX_is_halted <= 0;
-      else ID_EX_is_halted <= 1;
     end
   end
 
@@ -426,57 +420,68 @@ wire [31:0] next_pc;
 //if jal/ jalr instruction btb changes
 
 always @(*)begin
-if(ID_EX_branch)begin
-if(!alu_bcond) begin
-real_pc=ID_EX_current_pc+4;end
-else begin
-real_pc=ID_EX_current_pc+ID_EX_imm;
-end
-end
-else if(ID_EX_is_jal)begin
-real_pc=ID_EX_current_pc+ID_EX_imm;
-end
-else if(ID_EX_is_jalr)begin
-  real_pc=f_alu_in_1+ID_EX_imm;
-end
-else begin real_pc=0;end
+  if(ID_EX_branch)begin
+    if(!alu_bcond) begin
+    real_pc=ID_EX_current_pc+4;end
+  else begin
+      real_pc=ID_EX_current_pc+ID_EX_imm;
+    end
+  end
+  else if(ID_EX_is_jal)begin
+    real_pc=ID_EX_current_pc+ID_EX_imm;
+  end
+  else if(ID_EX_is_jalr)begin
+    real_pc=f_alu_in_1+ID_EX_imm;
+  end
+  else begin real_pc=0;end
 end
 
 
-reg need_change;
+
 always @(*)begin
-if(ID_EX_branch&&alu_bcond&&(real_pc!=ID_EX_pred_pc))
-begin need_bubble=1;end
-else if(ID_EX_branch&&!alu_bcond)
-begin need_bubble=0;
-if(real_pc!=ID_EX_pred_pc) need_change=1;end
-else if(ID_EX_branch&&alu_bcond&&(real_pc==ID_EX_pred_pc))
-begin need_bubble=0;end
-else if((ID_EX_is_jal||ID_EX_is_jalr)&&(real_pc!=ID_EX_pred_pc))
-begin need_bubble=1;end
-else begin need_bubble=0;
-need_change=0;end
-
+  if(ID_EX_branch&&alu_bcond&&(real_pc!=ID_EX_pred_pc))
+  begin 
+    need_update=1;
+    need_change=1;
+  end
+  else if(ID_EX_branch&&!alu_bcond)
+  begin 
+    need_update=0;
+    if(real_pc!=ID_EX_pred_pc) need_change=1;
+    else need_change=0;
+  end
+  else if((ID_EX_is_jal||ID_EX_is_jalr)&&(real_pc!=ID_EX_pred_pc))
+  begin 
+    need_update=1;
+    need_change=1;
+  end
+  else begin 
+    need_update=0;
+    need_change=0;
+  end
 end
 
-mux2 predOrALU(
-.mux_in1(real_pc),//predpc or ALU_result
-.mux_in2(pred_pc), //ALU_result
-.control(need_bubble||need_change),//compare_result
-.mux_out(next_pc)
-);
+always @(*)begin
+  if(need_change) next_pc = real_pc;
+  else next_pc = pred_pc;
+end
+
+
+//when update next_pc
 //two bubble if compare_result is 0
 
 always @(*) begin//in both IF &ID make bubble
-if(need_bubble)begin//interpret it as bubble in IF/ID stage
-//btb table update is needed
-btb_update=1;
-write_index=ID_EX_current_pc[6:2];
-tag_write=ID_EX_current_pc[31:7];
-end
-else begin
-btb_update=0;
-end
+  if(need_update)begin//interpret it as bubble in IF/ID stage
+    //btb table update is needed
+    btb_update=1;
+    write_index=ID_EX_current_pc[6:2];
+    tag_write=ID_EX_current_pc[31:7];
+  end
+  else begin
+    btb_update=0;
+    write_index=ID_EX_current_pc[6:2];
+    tag_write=ID_EX_current_pc[31:7];
+  end
 end
 
 
