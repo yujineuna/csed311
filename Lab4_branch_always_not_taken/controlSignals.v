@@ -1,0 +1,11 @@
+//control signal numbering
+`define is_jal 4'b1111
+`define is_jalr 4'b1110
+`define branch 4'b1101
+`define alu_op 4'b0110
+`define mem_read 4'b0101
+`define mem_to_reg 4'b0100
+`define mem_write 4'b0011
+`define alu_src 4'b0010
+`define write_enable 4'b0001
+`define pc_to_reg 4'b0000

@@ -23,7 +23,7 @@ module InstMemory #(parameter MEM_DEPTH = 1024) (input reset,
       for (i = 0; i < MEM_DEPTH; i = i + 1)
           mem[i] = 32'b0;
       // Provide path of the file including instructions with binary format
-      $readmemh("C:/csed311/Lab4_btb/recursive_mem.txt", mem);
+      $readmemh("C:/Users/jangyj2020/Desktop/non_control_flow.txt", mem);
     end
   end
 

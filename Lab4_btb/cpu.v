@@ -132,6 +132,7 @@ reg [31:0] next_pc;
    
   reg [31:0] real_pc;
   reg need_update;
+  reg need_change;
     
 
   //---------------------------halted condition
@@ -151,7 +152,7 @@ reg [31:0] next_pc;
   always @(posedge clk) begin
     case (halted_state)
       2'b01: begin
-        if(rs1_dout == 10 && halt_type==0) halt_signal<= 1;
+        if(MEM_WB_mem_to_reg_src_1 == 10 && halt_type==0) halt_signal<= 1;
         else if(EX_MEM_alu_out==10 && halt_type==1) halt_signal <= 1;
         else halted_state <= 0;
       end
@@ -419,45 +420,50 @@ reg [31:0] next_pc;
 //if jal/ jalr instruction btb changes
 
 always @(*)begin
-if(ID_EX_branch)begin
-if(!alu_bcond) begin
-real_pc=ID_EX_current_pc+4;end
-else begin
-real_pc=ID_EX_current_pc+ID_EX_imm;
-end
-end
-else if(ID_EX_is_jal)begin
-real_pc=ID_EX_current_pc+ID_EX_imm;
-end
-else if(ID_EX_is_jalr)begin
-  real_pc=f_alu_in_1+ID_EX_imm;
-end
-else begin real_pc=0;end
+  if(ID_EX_branch)begin
+    if(!alu_bcond) begin
+    real_pc=ID_EX_current_pc+4;end
+  else begin
+      real_pc=ID_EX_current_pc+ID_EX_imm;
+    end
+  end
+  else if(ID_EX_is_jal)begin
+    real_pc=ID_EX_current_pc+ID_EX_imm;
+  end
+  else if(ID_EX_is_jalr)begin
+    real_pc=(f_alu_in_1+ID_EX_imm)&32'hFFFFFFFE;
+  end
+  else begin real_pc=0;end
 end
 
 
-reg need_change;
 
 always @(*)begin
-if(ID_EX_branch&&alu_bcond&&(real_pc!=ID_EX_pred_pc))
-begin need_update=1;
-need_change=1;end
-else if(ID_EX_branch&&!alu_bcond)
-begin need_update=0;
-if(real_pc!=ID_EX_pred_pc) 
-begin need_change=1; end
-else need_change=0;
-end
-else if((ID_EX_is_jal||ID_EX_is_jalr)&&(real_pc!=ID_EX_pred_pc))
-begin need_update=1;
-need_change=1;end
-else begin need_update=0;
-need_change=0;end
+  if(ID_EX_branch&&alu_bcond&&(real_pc!=ID_EX_pred_pc))
+  begin 
+    need_update=1;
+    need_change=1;
+  end
+  else if(ID_EX_branch&&!alu_bcond)
+  begin 
+    need_update=0;
+    if(real_pc!=ID_EX_pred_pc) need_change=1;
+    else need_change=0;
+  end
+  else if((ID_EX_is_jal||ID_EX_is_jalr)&&(real_pc!=ID_EX_pred_pc))
+  begin 
+    need_update=1;
+    need_change=1;
+  end
+  else begin 
+    need_update=0;
+    need_change=0;
+  end
 end
 
 always @(*)begin
-if(need_change)next_pc=real_pc;
-else next_pc=pred_pc;
+  if(need_change) next_pc = real_pc;
+  else next_pc = pred_pc;
 end
 
 
@@ -465,17 +471,17 @@ end
 //two bubble if compare_result is 0
 
 always @(*) begin//in both IF &ID make bubble
-if(need_update)begin//interpret it as bubble in IF/ID stage
-//btb table update is needed
-btb_update=1;
-write_index=ID_EX_current_pc[6:2];
-tag_write=ID_EX_current_pc[31:7];
-end
-else begin
-btb_update=0;
-write_index=ID_EX_current_pc[6:2];
-tag_write=ID_EX_current_pc[31:7];
-end
+  if(need_update)begin//interpret it as bubble in IF/ID stage
+    //btb table update is needed
+    btb_update=1;
+    write_index=ID_EX_current_pc[6:2];
+    tag_write=ID_EX_current_pc[31:7];
+  end
+  else begin
+    btb_update=0;
+    write_index=ID_EX_current_pc[6:2];
+    tag_write=ID_EX_current_pc[31:7];
+  end
 end
 
 
@@ -558,7 +564,7 @@ hazardDetection hunit(
 
   // Update EX/MEM pipeline registers here
   always @(posedge clk) begin
-    if (reset) begin
+    if (reset|| (halt_signal && !halt_type)) begin
       //control signal
       EX_MEM_mem_to_reg <= 0;
       EX_MEM_reg_write <= 0;
