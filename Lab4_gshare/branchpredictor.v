@@ -68,15 +68,17 @@ always @(posedge clk) begin
       if(branch_history_table[btb_idx]==2'b11)begin end
       else branch_history_table[btb_idx] <= branch_history_table[btb_idx]+1;
 
-      if(bhsr==8'b11111111)begin end
-      else bhsr <= bhsr + 1;
+      //bhsr update
+      bhsr = bhsr << 1;
+      bhsr = bhsr + 1;
    end
    else if(real_taken==0)begin
       if(branch_history_table[btb_idx]==2'b00)begin end
       else branch_history_table[btb_idx] <= branch_history_table[btb_idx]-1;
 
-      if(bhsr==8'b00000000) begin end
-      else bhsr <= bhsr - 1;
+      //bhsr update
+      bhsr = bhsr << 1;
+      bhsr = bhsr + 0;
    end
    else begin end
 end

@@ -152,7 +152,7 @@ reg [31:0] next_pc;
   always @(posedge clk) begin
     case (halted_state)
       2'b01: begin
-        if(rs1_dout == 10 && halt_type==0) halt_signal<= 1;
+        if(MEM_WB_mem_to_reg_src_1 == 10 && halt_type==0) halt_signal<= 1;
         else if(EX_MEM_alu_out==10 && halt_type==1) halt_signal <= 1;
         else halted_state <= 0;
       end

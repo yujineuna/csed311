@@ -76,7 +76,7 @@ module CPU(input reset,       // positive reset signal
   reg [31:0] MEM_WB_mem_to_reg_src_2;
   reg[31:0] MEM_WB_rd;
 
-  wire [31:0] next_pc;
+reg [31:0] next_pc;
   wire [31:0] current_pc;
   wire [4:0] rs1;
   
@@ -131,12 +131,9 @@ module CPU(input reset,       // positive reset signal
   reg [2:0]halt_signal;
    
   reg [31:0] real_pc;
-  reg need_bubble;
-  
-  always @(posedge clk)
-  begin
-  end
-  
+  reg need_update;
+  reg need_change;
+    
 
   //---------------------------halted condition
   always @(*) begin
@@ -155,7 +152,7 @@ module CPU(input reset,       // positive reset signal
   always @(posedge clk) begin
     case (halted_state)
       2'b01: begin
-        if(rs1_dout == 10 && halt_type==0) halt_signal<= 1;
+        if(MEM_WB_mem_to_reg_src_1 == 10 && halt_type==0) halt_signal<= 1;
         else if(EX_MEM_alu_out==10 && halt_type==1) halt_signal <= 1;
         else halted_state <= 0;
       end
@@ -166,10 +163,8 @@ module CPU(input reset,       // positive reset signal
   end
   
   always@(posedge clk)begin
-  if(halt_signal>=1)
-  halt_signal<=halt_signal+1;
-  if(halt_signal==4)
-  is_halted<=1;
+    if(halt_signal>=1) halt_signal<=halt_signal+1;
+    if(halt_signal==4) is_halted<=1;
   end
   //-------------------halted condition end
 
@@ -191,6 +186,8 @@ module CPU(input reset,       // positive reset signal
     .current_pc(current_pc)   // output
   );
   
+
+  
   //****************//
   //then How can I update PC?
   // ---------- Instruction Memory ----------
@@ -201,10 +198,10 @@ module CPU(input reset,       // positive reset signal
     .dout(iout)     // output
   );
   
-  mux2 ioutorBubble(
+ mux2 ioutorBubble(
   .mux_in1({iout[31:7],7'bZZZZZZZ}),
   .mux_in2(iout),
-  .control(need_bubble),
+  .control(need_change),
   .mux_out(inst)); // for IF instruction bubble
 
 
@@ -213,7 +210,7 @@ module CPU(input reset,       // positive reset signal
   reg btb_update;
   reg [4:0]write_index;
   reg [31:0]tag_write;
-  reg [1:0]real_taken;
+  reg [1:0] real_taken;
 
   branchpredictor bp(
   .reset(reset),
@@ -221,7 +218,7 @@ module CPU(input reset,       // positive reset signal
   .pc(current_pc),
   .btb_update(btb_update),
   .real_pc(real_pc),
-  .write_index(write_index),
+  .write_index( write_index),
   .tag_write(tag_write),
   .real_taken(real_taken),
   .pred_pc(pred_pc),
@@ -312,7 +309,7 @@ module CPU(input reset,       // positive reset signal
   mux2 stall_control_sig (
     .mux_in1(16'b0000000000000000),
     .mux_in2(control_sigs),
-    .control(is_hazard||is_bubble||need_bubble),
+    .control(is_hazard||need_change||is_bubble),
     .mux_out(control_signal)
   );
 
@@ -325,7 +322,7 @@ module CPU(input reset,       // positive reset signal
 
   // Update ID/EX pipeline registers here
   always @(posedge clk) begin
-    if (reset || need_bubble || halt_signal) begin
+    if (reset||need_change||halt_signal) begin
       //control signal
       ID_EX_is_jal<=0;
       ID_EX_is_jalr<=0;
@@ -422,69 +419,80 @@ module CPU(input reset,       // positive reset signal
 //if jal/ jalr instruction btb changes
 
 always @(*)begin
-if(ID_EX_branch)begin
+  if(ID_EX_branch)begin
     if(!alu_bcond) begin
-        real_pc=ID_EX_current_pc+4;
-        real_taken=0;
-        end
-    else begin
-        real_pc=ID_EX_current_pc+ID_EX_imm;
-        real_taken=1;
+      real_pc=ID_EX_current_pc+4;
+      real_taken = 0;
     end
-end
-else if(ID_EX_is_jal)begin
+  else begin
+      real_pc=ID_EX_current_pc+ID_EX_imm;
+      real_taken = 1;
+    end
+  end
+  else if(ID_EX_is_jal)begin
     real_pc=ID_EX_current_pc+ID_EX_imm;
-    real_taken=1;
-end
-else if(ID_EX_is_jalr)begin
+    real_taken = 1;
+  end
+  else if(ID_EX_is_jalr)begin
     real_pc=f_alu_in_1+ID_EX_imm;
-    real_taken=1;
+    real_taken = 1;
+  end
+  else begin 
+    real_pc=0;
+    real_taken = 2;
+  end
 end
-else begin 
-real_pc=0;
-real_taken=2;end
-end
-//question :jal and jalr instruction need bht update??? 
 
-reg need_change;
 
 
 always @(*)begin
-if(ID_EX_branch&&alu_bcond&&(real_pc!=ID_EX_pred_pc))
-begin need_bubble=1;end
-else if(ID_EX_branch&&!alu_bcond)
-begin need_bubble=0;
-if(real_pc!=ID_EX_pred_pc) need_change=1;end
-else if(ID_EX_branch&&alu_bcond&&(real_pc==ID_EX_pred_pc))
-begin need_bubble=0;end
-else if((ID_EX_is_jal||ID_EX_is_jalr)&&(real_pc!=ID_EX_pred_pc))
-begin need_bubble=1;end
-else begin need_bubble=0;
-need_change=0;end
-
+  if(ID_EX_branch&&alu_bcond&&(real_pc!=ID_EX_pred_pc))
+  begin 
+    need_update=1;
+    need_change=1;
+  end
+  else if(ID_EX_branch&&!alu_bcond)
+  begin 
+    need_update=0;
+    if(real_pc!=ID_EX_pred_pc) need_change=1;
+    else need_change=0;
+  end
+  else if((ID_EX_is_jal||ID_EX_is_jalr)&&(real_pc!=ID_EX_pred_pc))
+  begin 
+    need_update=1;
+    need_change=1;
+  end
+  else begin 
+    need_update=0;
+    need_change=0;
+  end
 end
 
-mux2 predOrALU(
-.mux_in1(real_pc),//predpc or ALU_result
-.mux_in2(pred_pc), //ALU_result
-.control(need_bubble||need_change),//compare_result
-.mux_out(next_pc)
-);
+always @(*)begin
+  if(need_change) next_pc = real_pc;
+  else next_pc = pred_pc;
+end
+
+
+//when update next_pc
 //two bubble if compare_result is 0
 
 always @(*) begin//in both IF &ID make bubble
-if(need_bubble)begin//interpret it as bubble in IF/ID stage
-//btb table update is needed
-btb_update=1;
-write_index=ID_EX_current_pc[6:2];
-tag_write=ID_EX_current_pc[31:0];
+  if(need_update)begin//interpret it as bubble in IF/ID stage
+    //btb table update is needed
+    btb_update=1;
+    write_index=ID_EX_current_pc[6:2];
+    tag_write=ID_EX_current_pc[31:7];
+  end
+  else begin
+    btb_update=0;
+    write_index=ID_EX_current_pc[6:2];
+    tag_write=ID_EX_current_pc[31:7];
+  end
 end
-else begin
-btb_update=0;
-write_index=ID_EX_current_pc[6:2];
-tag_write=ID_EX_current_pc[31:0];
-end
-end
+
+
+
 
 
 
@@ -563,7 +571,7 @@ hazardDetection hunit(
 
   // Update EX/MEM pipeline registers here
   always @(posedge clk) begin
-    if (reset || (halt_signal && !halt_type)) begin
+    if (reset) begin
       //control signal
       EX_MEM_mem_to_reg <= 0;
       EX_MEM_reg_write <= 0;
