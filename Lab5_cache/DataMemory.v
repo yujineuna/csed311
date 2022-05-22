@@ -46,6 +46,8 @@ module DataMemory #(parameter MEM_DEPTH = 16384,
     if (reset) begin
        for (i = 0; i < MEM_DEPTH; i = i + 1)
          mem[i] = 0;
+         
+           $readmemh("C:/csed311/Lab5_cache/opt_matmul_unroll.mem", mem);
     end
     // Write data to the memory
     else if (_mem_write && delay_counter == 0) begin
@@ -71,7 +73,7 @@ module DataMemory #(parameter MEM_DEPTH = 16384,
     else if (delay_counter > 0) begin
       delay_counter <= delay_counter - 1;
     end
-    else begin
+    else begin // if delay_counter==0 & request_arrived
       delay_counter <= 0;
       _mem_read <= 0;
       _mem_write <= 0;
@@ -80,4 +82,5 @@ module DataMemory #(parameter MEM_DEPTH = 16384,
     end
   end
 
+//when usual days, what things going on? when request is not arrived delay counter is zero and means mem_ready is 1
 endmodule

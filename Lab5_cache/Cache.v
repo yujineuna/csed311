@@ -18,6 +18,7 @@ module Cache #(parameter LINE_SIZE = 16,
     output is_output_valid,
     output reg [31:0] dout,
     output reg is_hit);
+  
   // Wire declarations
   wire is_data_mem_ready;
   wire [TAG_SIZE-1:0] tag;
@@ -51,16 +52,19 @@ module Cache #(parameter LINE_SIZE = 16,
         dirty_table[i] = 0;
       end
     end
-    // Update data when cache miss: both write miss, read miss
-    else if(is_ready && is_hit) begin
+    // Update memory when cache miss: both write miss, read miss
+    else if(mem_output_valid) begin
       data_bank[idx] <= mem_dout;
       dirty_table[idx] <= 0;
-    end
-    // Update tag when cache miss
-    else if(!is_hit && is_input_valid) begin
       tag_bank[idx] <= tag;
       valid_table[idx] <= 1;
     end
+
+   /* // Update tag when cache miss
+    else if(!is_hit && is_input_valid) begin
+      tag_bank[idx] <= tag;
+      valid_table[idx] <= 1;
+    end*/
   end
 
   // Check the value of cache with idx and block_offset
@@ -68,7 +72,7 @@ module Cache #(parameter LINE_SIZE = 16,
     if ((tag_bank[idx] == tag) && valid_table[idx]) is_hit = 1;
     else is_hit = 0;
     // Read cache
-    if(is_ready && is_hit && mem_read) begin
+    if(is_hit && mem_read) begin
       case(block_offset)
         0: dout = data_bank[idx][0:31];
         1: dout = data_bank[idx][32:63];
@@ -80,7 +84,7 @@ module Cache #(parameter LINE_SIZE = 16,
 
   // Write cache
   always @(posedge clk) begin
-    if(is_ready && is_hit && mem_write && dirty_table[idx]==0) begin
+    if(is_hit && mem_write && dirty_table[idx]==0) begin
       case(block_offset)
         0: data_bank[idx][0:31] <= din;
         1: data_bank[idx][32:63] <= din;
@@ -90,6 +94,9 @@ module Cache #(parameter LINE_SIZE = 16,
       dirty_table[idx] <= 1;
     end
   end
+
+
+  //when cache stall it also access to memory
 
   // Instantiate data memory
   DataMemory data_mem (
@@ -105,10 +112,13 @@ module Cache #(parameter LINE_SIZE = 16,
     .dout(mem_dout),  //output
 
     // send inputs to the data memory.
-    .addr(addr),        // send original address that comes from the cpu
-    .mem_read(mem_read||mem_write), 
+    .addr(addr-8*block_offset),        // send original address that comes from the cpu
+    .mem_read((mem_read||mem_write)&&!is_hit), 
     .mem_write(mem_write&&dirty_table[idx]==1),
     .din(data_bank[idx])
   );
 
 endmodule
+//when access data 4block at once...!
+
+//mem_output_valid why not using?

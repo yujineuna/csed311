@@ -144,6 +144,8 @@ reg [31:0] next_pc;
   reg need_update;
   reg need_change;
     
+always @(posedge clk)begin
+end
 
   //---------------------------halted condition
   always @(*) begin
@@ -249,6 +251,7 @@ reg [31:0] next_pc;
       IF_ID_pred_pc<=pred_pc;
       IF_ID_current_pc<=current_pc;// is this has a relation ship with IFID_write?maybe,,,yes?
       end
+      else begin end
     end
 
   always @(*) begin
@@ -607,7 +610,7 @@ hazardDetection hunit(
     end
   end
   
-  assign is_input_valid = (EX_MEM_opcode[6:0]==7'b0000011 || EX_MEM_opcode[6:0]==7'b0100011)? 1 : 0;
+  assign is_input_valid =(EX_MEM_opcode[6:0]==7'b0000011 || EX_MEM_opcode[6:0]==7'b0100011)? 1 : 0;
   //------------Cache-------------
   Cache cache(
     .reset(reset),
@@ -629,7 +632,7 @@ hazardDetection hunit(
       if(is_ready && is_hit && is_output_valid) begin
         cache_stall = 0;
         PCwrite_cachestall = 0;
-        IFID_write_cachestall = 0;
+        IFID_write_cachestall = 0;//so i think it can be just unified by cache_stall
       end
       else begin
         cache_stall = 1;
