@@ -33,9 +33,11 @@ module DataMemory #(parameter MEM_DEPTH = 16384,
   reg _mem_write;
   reg [BLOCK_SIZE * 8 - 1:0] _din;
 
+  wire request_arrived;
+
   assign request_arrived = ((mem_read | mem_write) && is_input_valid);
 
-  assign dout = (_mem_read && delay_counter == 0)? mem[_mem_addr] : 128'bzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz;
+  assign dout = (_mem_read && (delay_counter == 0)) ? mem[_mem_addr] : 0;
   assign is_output_valid = (_mem_read && delay_counter == 0);
 
   // Do not have to check `_mem_read == 0 & _mem_write == 0`
@@ -46,8 +48,6 @@ module DataMemory #(parameter MEM_DEPTH = 16384,
     if (reset) begin
        for (i = 0; i < MEM_DEPTH; i = i + 1)
          mem[i] = 0;
-         
-           $readmemh("C:/csed311/Lab5_cache/opt_matmul_unroll.mem", mem);
     end
     // Write data to the memory
     else if (_mem_write && delay_counter == 0) begin
@@ -67,13 +67,13 @@ module DataMemory #(parameter MEM_DEPTH = 16384,
       delay_counter <= DELAY;
       _mem_read <= mem_read;
       _mem_write <= mem_write;
-      _mem_addr <= {addr >> ADDR_SHIFT};
+      _mem_addr <= addr;
       _din <= din;
     end
     else if (delay_counter > 0) begin
       delay_counter <= delay_counter - 1;
     end
-    else begin // if delay_counter==0 & request_arrived
+    else begin
       delay_counter <= 0;
       _mem_read <= 0;
       _mem_write <= 0;

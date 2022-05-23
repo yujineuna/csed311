@@ -32,6 +32,7 @@ module Cache #(parameter LINE_SIZE = 16,
   reg valid_table [0:NUM_SETS-1];
   reg dirty_table [0:NUM_SETS-1];
   wire [LINE_SIZE*8-1:0] mem_dout;
+  wire [31:0] mem_addr;
 
   integer i;
 
@@ -94,8 +95,13 @@ module Cache #(parameter LINE_SIZE = 16,
       dirty_table[idx] <= 1;
     end
   end
+  wire[31:0] a1;
+  wire[31:0] a2;
+  assign a1 = tag[idx]<<4;
+  assign a2 = ((addr>>`CLOG2(LINE_SIZE))<<`CLOG2(LINE_SIZE));
 
 
+  assign mem_addr = (mem_write && !is_hit && valid_table[idx]!=0 && !mem_output_valid) ? a1 : a2;
   //when cache stall it also access to memory
 
   // Instantiate data memory
@@ -112,9 +118,9 @@ module Cache #(parameter LINE_SIZE = 16,
     .dout(mem_dout),  //output
 
     // send inputs to the data memory.
-    .addr(addr-8*block_offset),        // send original address that comes from the cpu
+    .addr(mem_addr),        // send original address that comes from the cpu
     .mem_read((mem_read||mem_write)&&!is_hit), 
-    .mem_write(mem_write&&dirty_table[idx]==1),
+    .mem_write((mem_write && is_hit && dirty_table[idx]==1)||(mem_write && !is_hit && valid_table[idx]!=0)),
     .din(data_bank[idx])
   );
 
