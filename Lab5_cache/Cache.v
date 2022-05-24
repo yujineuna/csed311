@@ -162,8 +162,8 @@ module Cache #(parameter LINE_SIZE = 16,
         if(mem_output_valid)begin 
           // wait until the memory respond to..
           next_state = `tag_compare;
-          //data_write = mem_dout;
-          //data_req=1;
+          data_write = mem_dout;
+          data_req=1;
         end
       end
       `write_back:begin
@@ -178,9 +178,9 @@ module Cache #(parameter LINE_SIZE = 16,
   end
 
   //update data_write using mem_dout
-  always @(posedge clk) begin
+ /* always @(posedge clk) begin
     if(current_state==`tag_compare && mem_output_valid) data_write <= mem_dout;
-  end
+  end*/
   //state update 
   always @(posedge clk)begin
     if(reset) current_state <= `idle;
