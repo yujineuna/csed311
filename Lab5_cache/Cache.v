@@ -1,4 +1,5 @@
 `include "CLOG2.v"
+`include "state.v"
 
 module Cache #(parameter LINE_SIZE = 16,
                parameter NUM_SETS = 16, /* Your choice */
@@ -43,6 +44,23 @@ module Cache #(parameter LINE_SIZE = 16,
   assign idx = addr[7:4];
   assign block_offset = addr[3:2];
 
+
+  reg data_req;
+  reg tag_req;
+  reg [31:0]data_write;
+  reg valid_req;
+  reg dirty_req;
+
+  reg mem_req_valid;
+  reg mem_req_read;
+  reg mem_req_write;
+  reg [31:0] mem_req_addr;
+  reg [1:0] current_state;
+  reg [1:0] next_state;
+
+
+
+
   // Set initial cache value
   always @(posedge clk) begin
     if(reset) begin
@@ -53,56 +71,119 @@ module Cache #(parameter LINE_SIZE = 16,
         dirty_table[i] = 0;
       end
     end
-    // Update memory when cache miss: both write miss, read miss
-    else if(mem_output_valid) begin
-      data_bank[idx] <= mem_dout;
-      dirty_table[idx] <= 0;
-      tag_bank[idx] <= tag;
-      valid_table[idx] <= 1;
-    end
-
-   /* // Update tag when cache miss
-    else if(!is_hit && is_input_valid) begin
-      tag_bank[idx] <= tag;
-      valid_table[idx] <= 1;
-    end*/
   end
 
-  // Check the value of cache with idx and block_offset
-  always @(*) begin    
-    if ((tag_bank[idx] == tag) && valid_table[idx]) is_hit = 1;
-    else is_hit = 0;
-    // Read cache
-    if(is_hit && mem_read) begin
+
+  //cache 
+  always @(posedge clk) begin
+    if(data_req) begin
       case(block_offset)
+        0: data_bank[idx][0:31] <= data_write;
+        1: data_bank[idx][32:63] <= data_write;
+        2: data_bank[idx][64:95] <= data_write;
+        3: data_bank[idx][96:127] <= data_write;
+      endcase
+
+    end
+    if(tag_req)begin
+        0: tag_bank[idx][0:31] <=tag;
+        1: tag_bank[idx][32:63] <=tag;
+        2: tag_bank[idx][64:95] <=tag;
+        3: tag_bank[idx][96:127] <= tag;
+    end
+    if(valid_req)begin
+    valid_table[idx]<=1;
+    end
+    if(dirty_req)begin
+    dirty_table[idx]<=1;
+    end
+
+  end
+
+  //when cache stall it also access to memory
+
+
+//---------------FSM---------------------------
+always @(*)begin
+is_hit=0;
+tag_req=0;
+data_req=0;
+req_valid=0;
+req_dirty=0;
+data_write=din;
+case(block_offset)
         0: dout = data_bank[idx][0:31];
         1: dout = data_bank[idx][32:63];
         2: dout = data_bank[idx][64:95];
         3: dout = data_bank[idx][96:127];
-      endcase
-    end
+endcase
+mem_req_valid=0;
+mem_req_addr=((addr>>`CLOG2(LINE_SIZE))<<`CLOG2(LINE_SIZE));
+mem_req_read=0;
+mem_req_write=0;
+case(current_state)
+idle :begin // cache is not working
+  if(is_input_valid)
+  next_state=tag_compare;
+end
+tag_compare:begin
+  if(tag==tag_bank[idx]&&valid_table[idx])begin 
+    is_hit=1;
+  //tag match and cache line is valid  
+  //write hit
+  if(mem_write)begin
+    data_req=1;
+    tag_req=1;
+    req_valid=1;
+    req_dirty=1;
+  end
+  next_state=idle;
+  end
+  else begin//cache miss
+  tag_req=1;
+  req_valid=1;
+  req_dirty=mem_write;
+  mem_req_valid=1;
+  if(valid_table[idx]==0||dirty_table[idx]==0)//miss with clean block
+  next_state=allocate;
+  mem_req_read=1;
+  else begin //miss with dirty line
+  mem_req_addr={tag_bank[idx],idx,4'b0000};
+  mem_req_write=1;
+  next_state=write_back;
+  end
+  end
+end 
+  allocate:begin
+  if(mem_output_valid)begin // wait until the memory respond to..
+  next_state=compare_tag;
+  data_write=mem_dout;
+  data_req=1;
+end
+  end
+  write_back:begin
+  if(is_data_mem_ready)begin
+ mem_req_valid=1; //issue new memory request
+  mem_req_write=0;//change mem_write to zero
+  mem_req_read=1;//mem_read to 1
+  next_state=allocate;
+end
+  end
+endcase
+end
+
+
+
+//state update 
+  always @(posedge clk)begin
+      if(reset)
+      current_state<=idle;
+      else current_state<=next_state;
   end
 
-  // Write cache
-  always @(posedge clk) begin
-    if(is_hit && mem_write && dirty_table[idx]==0) begin
-      case(block_offset)
-        0: data_bank[idx][0:31] <= din;
-        1: data_bank[idx][32:63] <= din;
-        2: data_bank[idx][64:95] <= din;
-        3: data_bank[idx][96:127] <= din;
-      endcase
-      dirty_table[idx] <= 1;
-    end
-  end
-  wire[31:0] a1;
-  wire[31:0] a2;
-  assign a1 = tag[idx]<<4;
-  assign a2 = ((addr>>`CLOG2(LINE_SIZE))<<`CLOG2(LINE_SIZE));
 
 
-  assign mem_addr = (mem_write && !is_hit && valid_table[idx]!=0 && !mem_output_valid) ? a1 : a2;
-  //when cache stall it also access to memory
+
 
   // Instantiate data memory
   DataMemory data_mem (
@@ -111,16 +192,16 @@ module Cache #(parameter LINE_SIZE = 16,
  
     // is data memory ready to accept request?
     .mem_ready(is_data_mem_ready), //output
-    .is_input_valid(is_input_valid),  //input
+     .is_input_valid(mem_req_valid),  //input
 
     // is output from the data memory valid?
     .is_output_valid(mem_output_valid),  //output
     .dout(mem_dout),  //output
 
     // send inputs to the data memory.
-    .addr(mem_addr),        // send original address that comes from the cpu
-    .mem_read((mem_read||mem_write)&&!is_hit), 
-    .mem_write((mem_write && is_hit && dirty_table[idx]==1)||(mem_write && !is_hit && valid_table[idx]!=0)),
+    .addr(mem_req_addr),        // send original address that comes from the cpu
+    .mem_read(mem_req_read), 
+    .mem_write(mem_req_write),
     .din(data_bank[idx])
   );
 
