@@ -3,9 +3,7 @@
 
 module Cache #(parameter LINE_SIZE = 16,
                parameter NUM_SETS = 16, /* Your choice */
-               parameter NUM_WAYS = 1, /* Your choice */
-               parameter TAG_SIZE = 24,
-               parameter IDX_SIZE = `CLOG2(NUM_SETS)) (
+               parameter NUM_WAYS = 1 /* Your choice */) (
     input reset,
     input clk,
 
@@ -22,14 +20,14 @@ module Cache #(parameter LINE_SIZE = 16,
   
   // Wire declarations
   wire is_data_mem_ready;
-  wire [TAG_SIZE-1:0] tag;
-  wire [IDX_SIZE-1:0] idx;
+  wire [23:0] tag;
+  wire [3:0] idx;
   wire [1:0] block_offset;
   wire mem_output_valid;
 
   // Reg declarations
   reg [0:LINE_SIZE*8-1] data_bank [0:NUM_SETS-1];
-  reg [TAG_SIZE-1:0] tag_bank [0:NUM_SETS-1];
+  reg [23:0] tag_bank [0:NUM_SETS-1];
   reg valid_table [0:NUM_SETS-1];
   reg dirty_table [0:NUM_SETS-1];
   wire [LINE_SIZE*8-1:0] mem_dout;
@@ -192,21 +190,24 @@ module Cache #(parameter LINE_SIZE = 16,
 
 
   // Instantiate data memory
-  DataMemory data_mem (
+    DataMemory #(.BLOCK_SIZE(LINE_SIZE)) data_mem(
     .reset(reset),
     .clk(clk),
 
     // is data memory ready to accept request?
-    .mem_ready(is_data_mem_ready), //output
+    
      .is_input_valid(mem_valid_req),  //input
     // is output from the data memory valid?
-    .is_output_valid(mem_output_valid),  //output
-    .dout(mem_dout),  //output
+   
     // send inputs to the data memory.
     .addr(mem_req_addr),        // send original address that comes from the cpu
     .mem_read(mem_req_read), 
     .mem_write(mem_req_write),
-    .din(data_bank[idx])
+    .din(data_bank[idx]),
+   .is_output_valid(mem_output_valid),  //output
+    .dout(mem_dout),  //output
+
+    .mem_ready(is_data_mem_ready) //output
   );
 
   endmodule

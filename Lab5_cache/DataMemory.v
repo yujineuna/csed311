@@ -1,9 +1,6 @@
-`include "CLOG2.v"
-
 module DataMemory #(parameter MEM_DEPTH = 16384,
                     parameter DELAY = 50,
-                    parameter BLOCK_SIZE = 16,
-                    parameter ADDR_SHIFT = `CLOG2(BLOCK_SIZE)) (
+                    parameter BLOCK_SIZE = 16) (
     input reset,
     input clk,
 
@@ -81,6 +78,5 @@ module DataMemory #(parameter MEM_DEPTH = 16384,
       _din <= 0;
     end
   end
-
-//when usual days, what things going on? when request is not arrived delay counter is zero and means mem_ready is 1
 endmodule
+
